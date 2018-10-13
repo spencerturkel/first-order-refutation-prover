@@ -91,8 +91,6 @@ expr = FORALL symbol formula
      | IMPLIES formula formula
      | NOT formula
      | CONTR
-     | UCONST symbol
-     | ECONST symbol formula
      | symbol objects
 symbol = [a-z0-9]+
 objects = symbol objects | formula objects | ε
