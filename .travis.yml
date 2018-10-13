@@ -3,3 +3,4 @@ python:
   - "3.4"
 script:
   - pytest --doctest-modules
+  - prospector --profile prospector_profile.yml
