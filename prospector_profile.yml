@@ -19,3 +19,7 @@ pep257:
 pylint:
   disable:
     - missing-docstring
+    - too-many-branches
+
+mccabe:
+  run: false
