@@ -11,11 +11,16 @@ def parse(formula_tokens: Iterator[Token]) -> Optional[Formula]:
     return None if formula_tokens else None  # TODO:
 
 
+class _Parser:
+    def __init__(self, tokens: Iterator[Token]) -> None:
+        self.tokens = tokens
+
+
 def _formula(tokens: Iterator[Token]) -> Optional[Formula]:
     if next(tokens) != ParenthesisToken.LEFT:
         return None
     return None
-    #  TODO:
+    # TODO:
     # expr = _expr(tokens)
     # if next(tokens) != ParenthesisToken.RIGHT:
     #     return None
