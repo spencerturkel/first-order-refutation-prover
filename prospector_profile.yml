@@ -1,5 +1,6 @@
 strictness: medium
 test-warnings: true
+doc-warnings: true
 autodetect: false
 
 mypy:
@@ -7,3 +8,9 @@ mypy:
 
 pep8:
   full: true
+
+pep257:
+  disable:
+    - D105
+    - D203
+    - D213

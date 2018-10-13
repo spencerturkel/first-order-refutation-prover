@@ -1,9 +1,16 @@
-""" This is the main file that will be executed by the grader. """
+"""Main file that will be executed by the grader."""
+
+from typing import List
 
 
-def add(x, y):
+def findIncSet(fSets: List[List[str]]) -> List[int]:  # noqa
+    """Find indices of inconsistent formula lists.
+
+    Given a list of lists of first-order logic formulas,
+    finds the zero-indexed indices of inconsistent lists of formulas.
+    See README.md for detailed specification.
+
+    :param fSets: list of formula lists
+    :return: returns the list of inconsistent zero-indexed indices
     """
-    >>> add(3, 4)
-    7
-    """
-    return x + y
+    return []  # TODO:
