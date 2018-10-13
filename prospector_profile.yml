@@ -14,3 +14,7 @@ pep257:
     - D105
     - D203
     - D213
+
+pylint:
+  disable:
+    - missing-docstring
