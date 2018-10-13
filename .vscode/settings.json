@@ -5,11 +5,6 @@
   "python.formatting.provider": "autopep8",
   "python.linting.enabled": true,
   "python.linting.prospectorEnabled": true,
-  "python.linting.prospectorArgs": [
-    "--with-tool",
-    "mypy",
-    "--doc-warnings",
-    "--full-pep8"
-  ],
+  "python.linting.prospectorArgs": ["--profile", "prospector_profile.yml"],
   "python.unitTest.pyTestEnabled": true
 }

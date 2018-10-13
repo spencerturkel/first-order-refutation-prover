@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/spencerturkel/first-order-refutation-prover.svg?token=gm1zuwtz6yWqd9Rwapxf&branch=master)](https://travis-ci.com/spencerturkel/first-order-refutation-prover)
+
 # Introduction
 
 This project was the second project for the Computationally Modelling Reasoning

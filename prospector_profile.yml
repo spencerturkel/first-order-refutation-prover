@@ -1,0 +1,9 @@
+strictness: medium
+test-warnings: true
+autodetect: false
+
+mypy:
+  run: true
+
+pep8:
+  full: true
