@@ -6,5 +6,10 @@
   "python.linting.enabled": true,
   "python.linting.prospectorEnabled": true,
   "python.linting.prospectorArgs": ["--profile", "prospector_profile.yml"],
-  "python.unitTest.pyTestEnabled": true
+  "python.unitTest.pyTestEnabled": true,
+  "[python]": {
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": true
+    }
+  },
 }
