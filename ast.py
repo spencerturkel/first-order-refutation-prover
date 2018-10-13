@@ -7,7 +7,7 @@ The Formula type is a Union of Tuple types and the Contradiction token.
 
 When analyzing a formula, check for a contradiction.
 If the formula is not a contradiction, then it is a tuple.
-The first field of the tuple will uniquely identify the kind of formula.
+The first field of the tuple is an identifying token.
 
 Since mypy cannot currently express recursive types, there is a hack
 to preserve type-safety for one level deep of each type.
@@ -18,32 +18,9 @@ If deeper inspection is required, more types can be added.
 There must be 2^n types for n layers of safety.
 """
 
-from enum import Enum, unique
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Tuple, Union
 
-
-@unique
-class QuantifierToken(Enum):
-    FORALL = 0
-    EXISTS = 1
-
-
-@unique
-class BinaryToken(Enum):
-    AND = 0
-    OR = 1
-    IMPLIES = 2
-
-
-@unique
-class NotToken(Enum):
-    NOT = 0
-
-
-@unique
-class ContradictionToken(Enum):
-    CONTR = 0
-
+from tokens import BinaryToken, ContradictionToken, NotToken, QuantifierToken
 
 ObjectAny = Union[str, Any]
 Object = Union[str, 'FormulaObjectAny']

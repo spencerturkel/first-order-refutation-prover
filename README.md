@@ -67,8 +67,6 @@ Our assignment is to identify inconsistent sets of of formulae in
 
 - `(`
 - `)`
-- `UCONST`
-- `ECONST`
 - `FORALL`
 - `EXISTS`
 - `CONTR`
