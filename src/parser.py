@@ -1,6 +1,6 @@
 """Formula string parsing module."""
 
-from typing import Iterator, Tuple, cast
+from typing import Iterator, Optional, Tuple, cast
 
 from .ast import Formula, Object
 from .tokens import (BinaryToken, ContradictionToken, NotToken,
@@ -18,6 +18,7 @@ class ParseError(Exception):
 
 class _Parser:
     def __init__(self, tokens: Iterator[Token]) -> None:
+        self.peek_token = cast(Optional[Token], None)
         self.tokens = tokens
 
     def formula(self) -> Formula:
@@ -43,6 +44,11 @@ class _Parser:
         return cast(str, token), self._objects()
 
     def _next(self) -> Token:
+        if self.peek_token is not None:
+            token = self.peek_token
+            self.peek_token = None
+            return token
+
         return next(self.tokens)
 
     def _symbol(self) -> str:
@@ -54,13 +60,22 @@ class _Parser:
     def _objects(self) -> Tuple[Object, ...]:
         objs = []
         while True:
-            token = self._next()
+            token = self._peek()
             if isinstance(token, str):
                 objs.append(token)
+                self._next()
             elif token == ParenthesisToken.LEFT:
+                self._next()
                 expr = self._expr()
                 self._expect(ParenthesisToken.RIGHT)
                 objs.append(expr)
             else:
+                return tuple(objs)
+
+    def _peek(self) -> Token:
+        if self.peek_token is None:
+            try:
+                self.peek_token = next(self.tokens)
+            except StopIteration:
                 raise ParseError
-        return tuple(objs)
+        return self.peek_token
