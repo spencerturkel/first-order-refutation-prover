@@ -94,6 +94,6 @@ expr = FORALL symbol formula
      | UCONST symbol
      | ECONST symbol formula
      | symbol objects
-indices = index trailing-indices | ε
+symbol = [a-z0-9]+
 objects = symbol objects | formula objects | ε
 ```
