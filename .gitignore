@@ -5,7 +5,7 @@
 !requirements.txt
 
 !.vscode
-!.vscode/*.json
+!.vscode/**/*
 
 !*.ini
 !*.md
