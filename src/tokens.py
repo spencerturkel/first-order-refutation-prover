@@ -38,5 +38,6 @@ Token = Union[
     QuantifierToken,
     BinaryToken,
     NotToken,
-    ContradictionToken
+    ContradictionToken,
+    str,
 ]
