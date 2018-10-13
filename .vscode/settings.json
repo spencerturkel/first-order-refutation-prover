@@ -1,9 +1,15 @@
 {
+  "editor.formatOnSave": true,
   "python.venvPath": "${workspaceFolder}/.venv",
   "python.pythonPath": ".venv/bin/python",
-  "python.formatting.provider": "black",
+  "python.formatting.provider": "autopep8",
   "python.linting.enabled": true,
   "python.linting.prospectorEnabled": true,
-  "python.unitTest.pyTestEnabled": true,
-  "python.linting.pylintEnabled": false
+  "python.linting.prospectorArgs": [
+    "--with-tool",
+    "mypy",
+    "--doc-warnings",
+    "--full-pep8"
+  ],
+  "python.unitTest.pyTestEnabled": true
 }
