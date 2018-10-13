@@ -2,10 +2,8 @@
 
 # Introduction
 
-This project was the second project for the Computationally Modelling Reasoning
-course at the University of South Florida taught by Dr. Licato.
-It is released under the MIT License, with the copyright attributed to Spencer
-Turkel, Jacob Schioppo, Matthew Monnik, and Zachary Meyer.
+This project was the second project for the Computationally Modelling Reasoning course at the University of South Florida taught by Dr. Licato.
+It is released under the MIT License, with the copyright attributed to Spencer Turkel, Jacob Schioppo, Matthew Monnik, and Zachary Meyer.
 
 Our assignment is to identify inconsistent sets of of formulae in
 [First-Order Logic](https://en.wikipedia.org/wiki/First-order_logic).
@@ -62,3 +60,40 @@ Our assignment is to identify inconsistent sets of of formulae in
 - **10/26** - Novel heuristic and presentation complete, testing complete
 - **10/31** - 11/1 - Presentations
 - **11/1** - Submit code
+
+# Formula Specification
+
+## Tokens
+
+- `(`
+- `)`
+- `UCONST`
+- `ECONST`
+- `FORALL`
+- `EXISTS`
+- `CONTR`
+- `AND`
+- `OR`
+- `IMPLIES`
+- `NOT`
+- `[a-z0-9]+`
+
+## Grammar
+
+Let `ε` be the empty string.
+
+```
+formula = ( expr )
+expr = FORALL symbol formula
+     | EXISTS symbol formula
+     | AND formula formula
+     | OR formula formula
+     | IMPLIES formula formula
+     | NOT formula
+     | CONTR
+     | UCONST symbol
+     | ECONST symbol formula
+     | symbol objects
+indices = index trailing-indices | ε
+objects = symbol objects | formula objects | ε
+```
