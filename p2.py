@@ -1,11 +1,8 @@
 """ This is the main file that will be executed by the grader. """
 
 
-def add(x: int, y: int) -> int:
-    """Add two numbers.
-
-    This function adds two numbers and returns the result.
-
+def add(x, y):
+    """
     >>> add(3, 4)
     7
     """
