@@ -2,7 +2,10 @@
 
 !.gitignore
 !LICENSE
-!Pipfile
+!requirements.txt
+
+!.vscode
+!.vscode/*.json
 
 !*.md
 !*.pptx
