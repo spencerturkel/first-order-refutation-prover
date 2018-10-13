@@ -1,0 +1,10 @@
+**/*
+
+!.gitignore
+!LICENSE
+!Pipfile
+
+!*.md
+!*.pptx
+!*.py
+!*.yml
