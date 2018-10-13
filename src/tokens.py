@@ -7,7 +7,7 @@ from typing import Union
 @unique
 class ParenthesisToken(Enum):
     LEFT = 0
-    RIGHT = 0
+    RIGHT = 1
 
 
 @unique

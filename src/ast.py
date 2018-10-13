@@ -20,7 +20,7 @@ There must be 2^n types for n layers of safety.
 
 from typing import Any, Tuple, Union
 
-from tokens import BinaryToken, ContradictionToken, NotToken, QuantifierToken
+from .tokens import BinaryToken, ContradictionToken, NotToken, QuantifierToken
 
 ObjectAny = Union[str, Any]
 Object = Union[str, 'FormulaObjectAny']

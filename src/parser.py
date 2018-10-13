@@ -1,9 +1,9 @@
 """Formula string parsing module."""
 
-from ast import Formula
 from typing import Iterator, Optional
 
-from tokens import ParenthesisToken, Token
+from .ast import Formula
+from .tokens import ParenthesisToken, Token
 
 
 def parse(formula_tokens: Iterator[Token]) -> Optional[Formula]:

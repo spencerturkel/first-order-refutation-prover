@@ -11,6 +11,7 @@ pep8:
 
 pep257:
   disable:
+    - D104
     - D105
     - D203
     - D213
