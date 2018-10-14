@@ -7,10 +7,6 @@ from .tokens import (BinaryToken, ContradictionToken, NotToken,
                      ParenthesisToken, QuantifierToken, Token)
 
 
-class InvalidTokenError(Exception):
-    pass
-
-
 def lex(formula: str) -> Iterator[Token]:
     index = 0
 

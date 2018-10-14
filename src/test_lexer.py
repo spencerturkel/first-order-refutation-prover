@@ -1,6 +1,6 @@
 import pytest
 
-from .lexer import InvalidTokenError, lex
+from .lexer import lex
 from .tokens import (BinaryToken, ContradictionToken, NotToken,
                      ParenthesisToken, QuantifierToken)
 
