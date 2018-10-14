@@ -48,6 +48,14 @@ from .tokens import (BinaryToken, ContradictionToken, NotToken,
       ParenthesisToken.LEFT, 'p', ParenthesisToken.RIGHT,
       ParenthesisToken.RIGHT],
      (BinaryToken.OR, ('p', ()), ('p', ()))),
+    ([ParenthesisToken.LEFT,
+      BinaryToken.AND,
+      ParenthesisToken.LEFT,
+      NotToken.NOT, ParenthesisToken.LEFT, 'a', ParenthesisToken.RIGHT,
+      ParenthesisToken.RIGHT,
+      ParenthesisToken.LEFT, 'a', ParenthesisToken.RIGHT,
+      ParenthesisToken.RIGHT],
+     (BinaryToken.AND, (NotToken.NOT, ('a', ())), ('a', ())))
 ])
 def test_good_parses(tokens: Iterable[Token], ast: Formula):
     assert parse(iter(tokens)) == ast
