@@ -9,6 +9,6 @@ def test_formulas() -> List[Formula]:
         (BinaryToken.IMPLIES, ContradictionToken.CONTR, ('a', ())),
         (BinaryToken.AND, (NotToken.NOT, ('a', ())), ('a', ())),
         (BinaryToken.OR, ('12', ()), ('a1', ())),
-        (QuantifierToken.FORALL, 'x', ('P', ('x', ()))),
-        (QuantifierToken.EXISTS, 'x', ('P', ('x', ()))),
+        (QuantifierToken.FORALL, 'x', ('p', ('x',))),
+        (QuantifierToken.EXISTS, 'x', ('p', ('x',))),
     ]
