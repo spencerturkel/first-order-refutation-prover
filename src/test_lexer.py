@@ -1,6 +1,6 @@
 import pytest
 
-from .lexer import lex
+from .lexer import InvalidTokenError, lex
 from .tokens import (BinaryToken, ContradictionToken, NotToken,
                      ParenthesisToken, QuantifierToken)
 
@@ -39,5 +39,52 @@ from .tokens import (BinaryToken, ContradictionToken, NotToken,
         ParenthesisToken.RIGHT,
     ]),
 ])
-def test_symbols(formula, symbols):
+def test_valid_strings(formula, symbols):
+    assert list(lex(formula)) == symbols
+
+
+@pytest.mark.parametrize('formula, symbols', [
+    ('(FORaLL 3ab4 (pq12b 3ab4))', [
+        ParenthesisToken.LEFT,
+    ]),
+    ('(eXISTS xx (11 xx))', [
+        ParenthesisToken.LEFT,
+    ]),
+    ('(IMPLIES (CONTR) (p (fF x)))', [
+        ParenthesisToken.LEFT,
+        BinaryToken.IMPLIES,
+        ParenthesisToken.LEFT, ContradictionToken.CONTR, ParenthesisToken.RIGHT,
+        ParenthesisToken.LEFT, 'p',
+        ParenthesisToken.LEFT, ]),
+    ('(IMPLIES (CoNTR) (p (fF x)))', [
+        ParenthesisToken.LEFT,
+        BinaryToken.IMPLIES,
+        ParenthesisToken.LEFT,
+    ]),
+    ('(AND (NOT (&)) (OR (a) (a)))', [
+        ParenthesisToken.LEFT, BinaryToken.AND,
+        ParenthesisToken.LEFT, NotToken.NOT,
+        ParenthesisToken.LEFT,
+    ]),
+    ('(AND (NOT (P)) (OR (a) (a)))', [
+        ParenthesisToken.LEFT, BinaryToken.AND,
+        ParenthesisToken.LEFT, NotToken.NOT,
+        ParenthesisToken.LEFT,
+    ]),
+    ('(aND (NOT (a)) (OR (a) (a)))', [
+        ParenthesisToken.LEFT,
+    ]),
+    ('(AND (nOT (a)) (OR (a) (a)))', [
+        ParenthesisToken.LEFT, BinaryToken.AND,
+        ParenthesisToken.LEFT,
+    ]),
+    ('(AND (NOT (a)) (oR (a) (a)))', [
+        ParenthesisToken.LEFT, BinaryToken.AND,
+        ParenthesisToken.LEFT, NotToken.NOT,
+        ParenthesisToken.LEFT, 'a', ParenthesisToken.RIGHT,
+        ParenthesisToken.RIGHT,
+        ParenthesisToken.LEFT,
+    ]),
+])
+def test_invalid_strings(formula, symbols):
     assert list(lex(formula)) == symbols
