@@ -1,5 +1,5 @@
 import string
-from typing import Iterator
+from typing import Iterator, List, cast
 
 from .tokens import (BinaryToken, ContradictionToken, NotToken,
                      ParenthesisToken, QuantifierToken, Token)
@@ -11,14 +11,8 @@ class InvalidTokenError(Exception):
 
 def lex(formula: str) -> Iterator[Token]:
     index = 0
-    length = len(formula)
 
-    def _op(name: str, token: Token) -> Iterator[Token]:
-        nonlocal formula
-        if formula[index: (index + len(name))] == name.split():
-            yield token
-
-    while index < length:
+    while index < len(formula):
         char = formula[index]
         if char == '(':
             index += 1
@@ -27,42 +21,64 @@ def lex(formula: str) -> Iterator[Token]:
             index += 1
             yield ParenthesisToken.RIGHT
         elif char == 'F':
-            if formula[(index + 1): (index + len('ORALL'))] == 'ORALL'.split():
-                index += len('FORALL')
-                yield QuantifierToken.FORALL
+            index += 1
+            if formula[index: (index + len('ORALL'))] != 'ORALL':
+                return
+            index += len('ORALL')
+            yield QuantifierToken.FORALL
         elif char == 'E':
-            if formula[(index + 1): (index + len('XISTS'))] == 'XISTS'.split():
-                index += len('EXISTS')
-                yield QuantifierToken.EXISTS
+            index += 1
+            if formula[index: (index + len('XISTS'))] != 'XISTS':
+                return
+            index += len('XISTS')
+            yield QuantifierToken.EXISTS
         elif char == 'C':
-            if formula[(index + 1): (index + len('ONTR'))] == 'ONTR'.split():
-                index += len('CONTR')
-                yield ContradictionToken.CONTR
+            index += 1
+            if formula[index: (index + len('ONTR'))] != 'ONTR':
+                return
+            index += len('ONTR')
+            yield ContradictionToken.CONTR
         elif char == 'A':
-            if formula[(index + 1): (index + len('ND'))] == 'ND'.split():
-                index += len('AND')
-                yield BinaryToken.AND
+            index += 1
+            if formula[index: (index + len('ND'))] != 'ND':
+                return
+            index += len('ND')
+            yield BinaryToken.AND
         elif char == 'O':
-            if formula[(index + 1): (index + len('R'))] == 'R'.split():
-                index += len('OR')
-                yield BinaryToken.OR
+            index += 1
+            if formula[index: (index + len('R'))] != 'R':
+                return
+            index += len('OR')
+            yield BinaryToken.OR
         elif char == 'I':
-            if (formula[(index + 1): (index + len('MPLIES'))]
-                    == 'MPLIES'.split()):
-                index += len('IMPLIES')
-                yield BinaryToken.IMPLIES
+            index += 1
+            if formula[index: (index + len('MPLIES'))] != 'MPLIES':
+                return
+            index += len('IMPLIES')
+            yield BinaryToken.IMPLIES
         elif char == 'N':
-            if formula[(index + 1): (index + len('OT'))] == 'OT'.split():
-                index += len('NOT')
-                yield NotToken.NOT
+            index += 1
+            if formula[index: (index + len('OT'))] != 'OT':
+                return
+            index += len('NOT')
+            yield NotToken.NOT
         else:
             char = formula[index]
-            result = []
-            while char in string.whitespace:
-                index += 1
-            while char in set(string.ascii_lowercase + string.digits):
-                result.append(char)
-                index += 1
-                while char in string.whitespace:
+            result = cast(List[str], [])
+            if char in string.whitespace:
+                while True:
                     index += 1
-            yield "".join(result)
+                    char = formula[index]
+                    if char not in string.whitespace:
+                        break
+            else:
+                while True:
+                    if char in string.whitespace or char in {'(', ')'}:
+                        yield "".join(result)
+                        break
+                    elif char in set(string.ascii_lowercase + string.digits):
+                        result.append(char)
+                        index += 1
+                        char = formula[index]
+                    else:
+                        return

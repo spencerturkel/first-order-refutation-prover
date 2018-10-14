@@ -7,7 +7,7 @@
   "python.linting.prospectorEnabled": true,
   "python.linting.prospectorArgs": ["--profile", "prospector_profile.yml"],
   "python.unitTest.pyTestEnabled": true,
-  "python.unitTest.pyTestArgs": ["--doctest-modules"],
+  "python.unitTest.pyTestArgs": ["--doctest-modules", "-v"],
   "[python]": {
     "editor.codeActionsOnSave": {
       "source.organizeImports": true
