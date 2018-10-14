@@ -1,6 +1,6 @@
 """Formula string parsing module."""
 
-from typing import Iterator, Optional, Tuple, cast
+from typing import Iterator, List, Optional, Tuple, cast
 
 from .ast import Formula, Object
 from .tokens import (BinaryToken, ContradictionToken, NotToken,
@@ -58,7 +58,7 @@ class _Parser:
         return sym
 
     def _objects(self) -> Tuple[Object, ...]:
-        objs = []
+        objs = cast(List[Object], [])
         while True:
             token = self._peek()
             if isinstance(token, str):
