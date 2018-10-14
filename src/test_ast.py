@@ -4,7 +4,7 @@ from .ast import Formula
 from .tokens import BinaryToken, ContradictionToken, NotToken, QuantifierToken
 
 
-def _test_formulas() -> List[Formula]:
+def test_formulas() -> List[Formula]:
     return [
         (BinaryToken.IMPLIES, ContradictionToken.CONTR, ('a', ())),
         (BinaryToken.AND, (NotToken.NOT, ('a', ())), ('a', ())),
