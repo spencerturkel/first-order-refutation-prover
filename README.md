@@ -93,3 +93,68 @@ expr = FORALL symbol formula
 symbol = [a-z0-9]+
 objects = symbol objects | formula objects | ε
 ```
+
+# Contributing
+
+## Environment Setup
+
+1. Download and install [VSCode](https://code.visualstudio.com/)
+2. Download and install [Python 3.4](https://www.python.org/downloads/release/python-344/)
+3. Install the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extension
+4. Clone this repository
+5. Open the project in VSCode
+6. In VSCode, open the integrated terminal with `` Ctrl-` ``
+7. Run `python3.4 -m venv .venv` to create an isolated virtual environment.
+8. Restart VSCode.
+9. Open the terminal. It should automatically run a command to activate the virtual environment.
+10. Run `python --version` to verify that you are in the virtual environment with the correct Python version.
+11. Run `pip install -r requirements.txt` to install packages for unit testing, linting, and refactoring.
+12. Optionally, place the following lines in your `keybindings.json` file (accessible by `Ctrl-K Ctrl-S`):
+
+    ```json
+    {
+      "key": "f4",
+      "command": "python.runtests",
+      "when": "editorFocus && !findInputFocussed && !replaceInputFocussed && editorLangId == 'python'"
+    }
+    ```
+
+    ```json
+    {
+      "key": "ctrl-alt-m",
+      "command": "python.refactorExtractMethod",
+      "when": "editorFocus && !findInputFocussed && !replaceInputFocussed && editorLangId == 'python'"
+    }
+    ```
+
+    ```json
+    {
+      "key": "ctrl-alt-v",
+      "command": "python.refactorExtractVariable",
+      "when": "editorFocus && !findInputFocussed && !replaceInputFocussed && editorLangId == 'python'"
+    }
+    ```
+
+## Development workflow
+
+Create unit tests using [pytest](https://docs.pytest.org/en/latest/contents.html) and/or [doctest](https://docs.python.org/3/library/doctest.html).
+Run them using `pytest .` in the project directory (or by pressing `F4` if you followed step 12 of the setup).
+
+Linters and formatters run every time you save a .py file.
+
+[MyPy](https://mypy.readthedocs.io/en/latest/index.html), a static type-checking tool, also runs on save.
+Use it in conjunction with the [typing](https://docs.python.org/3.5/library/typing.html) standard library module.
+
+## GitHub workflow
+
+Make your own branch named after the feature you're working on.
+
+Create a pull request for your feature branch when you're ready to merge back into `master`.
+
+Pull requests cannot be merged into `master` unless they pass all tests and have no problems reported by linters.
+
+## Continuous Integration
+
+Travis CI verifies all of the latest commits and pull-requests using Python 3.4.
+It lints and test using the same configuration as in the editor.
+See `.travis.yml` for the full specification of commands run.
