@@ -42,4 +42,4 @@ Formula1 = FormulaF[Formula0]
 Formula2 = FormulaF[Formula1]
 Formula3 = FormulaF[Formula2]
 Formula4 = FormulaF[Formula3]
-Formula = FormulaF[Formula4]
+Formula = Formula4
