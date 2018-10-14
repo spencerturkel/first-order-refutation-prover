@@ -1,4 +1,4 @@
-"""Enums for non-symbol tokens."""
+"""Enums and types for tokens."""
 
 from enum import Enum, unique
 from typing import Union

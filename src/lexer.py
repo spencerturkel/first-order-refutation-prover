@@ -1,3 +1,5 @@
+"""Formula string lexing."""
+
 import string
 from typing import Iterator, List, cast
 
