@@ -1,7 +1,7 @@
 from typing import FrozenSet, List, cast
 
-from .cnf_formula import CnfFormula, SymbolTree
-from .tree import Tree
+from .cnf_formula import CnfFormula
+from .tree import SymbolTree, Tree
 
 
 def test_simple_formulas() -> List[CnfFormula]:

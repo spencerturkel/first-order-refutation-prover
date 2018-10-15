@@ -21,6 +21,7 @@ pylint:
   disable:
     - missing-docstring # docstrings not required on everything
     - too-many-branches # domain logic not suited for limited branching
+    - too-many-arguments # domain logic not suited for limited arguments
     - too-many-statements # domain logic not suited for limited statements
     - trailing-comma-tuple # mypy prevents programming errors from this
     - assigning-non-slot # checked by mypy
