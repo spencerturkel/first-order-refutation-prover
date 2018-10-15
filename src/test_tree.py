@@ -1,4 +1,4 @@
-from typing import Tuple, TypeVar, Union
+from typing import FrozenSet, List, Tuple, TypeVar, Union
 
 import pytest
 
@@ -13,3 +13,16 @@ T = TypeVar('T')
 ])
 def test_iter(data: Tuple[Union[T, Tree[T]]]):
     assert tuple(Tree(data)) == data
+
+
+def test_typing() -> List[Tree[str]]:
+    return [
+        Tree((
+            'P',
+            'x',
+            Tree((
+                'f_y',
+                'x',
+            ))
+        )),
+    ]
