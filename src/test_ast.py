@@ -1,16 +1,17 @@
 from typing import List
 
-from .ast import Formula, FormulaF
+from .ast import Formula
 from .tokens import BinaryToken, ContradictionToken, NotToken, QuantifierToken
 
 
 def test_formulas() -> List[Formula]:
     return [
-        Formula(FormulaF(BinaryToken.IMPLIES,
-                         Formula(FormulaF(ContradictionToken.CONTR)),
-                         Formula(FormulaF('a', ())))),
-        # FormulaF(BinaryToken.AND, (NotToken.NOT, ('a', ())), ('a', ())),
-        # FormulaF(BinaryToken.OR, ('12', ()), ('a1', ())),
-        # FormulaF(QuantifierToken.FORALL, 'x', ('p', ('x',))),
-        # FormulaF(QuantifierToken.EXISTS, 'x', ('p', ('x',))),
+        Formula.of(BinaryToken.IMPLIES,
+                   Formula.of(ContradictionToken.CONTR),
+                   Formula.of('a', ())),
+        Formula.of(BinaryToken.AND, Formula.of(
+            NotToken.NOT, Formula.of('a', ())), Formula.of('a', ())),
+        Formula.of(BinaryToken.OR, Formula.of('12', ()), Formula.of('a1', ())),
+        Formula.of(QuantifierToken.FORALL, 'x', Formula.of('p', ('x',))),
+        Formula.of(QuantifierToken.EXISTS, 'x', Formula.of('p', ('x',))),
     ]

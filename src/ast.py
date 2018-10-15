@@ -147,7 +147,7 @@ class FormulaF(Generic[T]):
         return self.visit(self._MapVisitor(function))
 
 
-class Formula():
+class Formula:
     def __init__(self, formula: FormulaF['Formula']) -> None:
         self.formula = formula
 
@@ -158,3 +158,34 @@ class Formula():
     def unfold(cls: Type['Formula'], seed: T,
                function: Callable[[T], FormulaF[T]]) -> 'Formula':
         return Formula(function(seed).map(lambda x: cls.unfold(x, function)))
+
+    @overload
+    @staticmethod
+    def of(contradiction: ContradictionToken) -> 'Formula':
+        pass
+
+    @overload
+    @staticmethod
+    def of(negation: NotToken, arg: 'Formula') -> 'Formula':
+        pass
+
+    @overload
+    @staticmethod
+    def of(first_arg: str, second_arg: Sequence[Union[str, 'Formula']]) -> 'Formula':
+        pass
+
+    @overload
+    @staticmethod
+    def of(token: BinaryToken,
+           first_arg: 'Formula', second_arg: 'Formula') -> 'Formula':
+        pass
+
+    @overload
+    @staticmethod
+    def of(token: QuantifierToken,
+           first_arg: str, second_arg: 'Formula') -> 'Formula':
+        pass
+
+    @staticmethod
+    def of(token, *rest):
+        return Formula(FormulaF(token, *rest))
