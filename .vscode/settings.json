@@ -6,6 +6,7 @@
   "python.linting.enabled": true,
   "python.linting.prospectorEnabled": true,
   "python.linting.prospectorArgs": ["--profile", "prospector_profile.yml"],
+  "python.linting.pylintEnabled": false,
   "python.unitTest.pyTestEnabled": true,
   "python.unitTest.pyTestArgs": ["--doctest-modules", "-v"],
   "[python]": {
