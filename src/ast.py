@@ -1,30 +1,12 @@
 """Abstract Syntax Tree typing.
 
 This module defines the type of the abstract syntax tree.
-The AST is expressed as the FormulaF.
-
-The FormulaF type is a Union of Tuple types and the Contradiction token.
-
-When analyzing a FormulaF, check for a contradiction.
-If the FormulaF is not a contradiction, then it is a tuple.
-The first field of the tuple is an identifying token.
-
-Since mypy cannot currently express recursive types, there is a hack
-to preserve type-safety at each level of recursion.
-
-FormulaF types the recursive formula fields as Any.
-FormulaF[FormulaF] preserves type-safety through one layer of recursion.
-FormulaF[FormulaF[FormulaF]] preserves two layers of type-safety.
-And so on.
-
-There are some pre-defined types aliasing these layers of recursion.
-Formula0 = FormulaF
-Formula3 = FormulaF[Formula2]
-And so on.
+The AST is expressed as the Formula type.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import Callable, Generic, Sequence, TypeVar, Union, cast
+from typing import (Callable, Generic, Sequence, Type, TypeVar, Union, cast,
+                    overload)
 
 from .tokens import BinaryToken, ContradictionToken, NotToken, QuantifierToken
 
@@ -44,8 +26,8 @@ class FormulaFVisitor(Generic[T, U], metaclass=ABCMeta):
     @abstractmethod
     def visit_binary(self,
                      token: BinaryToken,
-                     variable: str,
-                     sub_formula: T) -> U:
+                     first_arg: T,
+                     second_arg: T) -> U:
         ...
 
     @abstractmethod
@@ -65,33 +47,54 @@ class FormulaFVisitor(Generic[T, U], metaclass=ABCMeta):
 
 
 class FormulaF(Generic[T]):
+    """Formula with sub-formulas of an arbitrary type."""
+
     __slots__ = '_tag', '_first_arg', '_second_arg'
 
-    # TODO: improve typing
-    def __init__(self, *args) -> None:
-        count_args = len(args)
-        if count_args == 1:
-            self._tag = cast(Union[ContradictionToken, NotToken, None,
-                                   BinaryToken, QuantifierToken],
-                             ContradictionToken.CONTR)
-        elif count_args == 2:
-            if args[0] == NotToken.NOT:
-                self._tag = NotToken.NOT
-                self._first_arg = args[1]
-            else:
-                # predicate
-                self._tag = None
-                self._first_arg, self._second_arg = args
-        else:
-            # quantifier or binary operation
-            self._tag = args[0]
-            self._first_arg = args[1]
-            self._second_arg = args[2]
+    @overload
+    def __init__(self, contradiction: ContradictionToken) -> None:
+        pass
 
-    def map(self, func: Callable[[T], U]) -> 'FormulaF[U]':
-        pass  # TODO:
+    @overload
+    def __init__(self, negation: NotToken, arg: T) -> None:
+        pass
+
+    @overload
+    def __init__(self,
+                 first_arg: str,
+                 second_arg: Sequence[Union[str, T]]) -> None:
+        pass
+
+    @overload
+    def __init__(self, token: BinaryToken,
+                 first_arg: T, second_arg: T) -> None:
+        pass
+
+    @overload
+    def __init__(self, token: QuantifierToken,
+                 first_arg: str, second_arg: T) -> None:
+        pass
+
+    def __init__(self,
+                 token,
+                 first_arg=None,
+                 second_arg=None):
+        if isinstance(token, ContradictionToken):
+            self._tag = token
+        elif isinstance(token, NotToken):
+            self._tag = token
+            self._first_arg = first_arg
+        elif isinstance(token, (BinaryToken, QuantifierToken)):
+            self._tag = token
+            self._first_arg = first_arg
+            self._second_arg = second_arg
+        else:
+            self._tag = None
+            self._first_arg = first_arg
+            self._second_arg = second_arg
 
     def visit(self, visitor: FormulaFVisitor[T, U]) -> U:
+        """Apply a function matching the type of this formula."""
         if isinstance(self._tag, QuantifierToken):
             return visitor.visit_quantifier(self._tag,
                                             self._first_arg,
@@ -106,11 +109,52 @@ class FormulaF(Generic[T]):
             return visitor.visit_contradiction()
         return visitor.visit_predicate(self._first_arg, self._second_arg)
 
+    class _MapVisitor(FormulaFVisitor[T, 'FormulaF[U]']):
+        def __init__(self, function: Callable[[T], U]) -> None:
+            self.function = function
 
-class Formula(FormulaF['Formula']):
-    def fold(self, visitor: FormulaFVisitor[T, U]) -> U:
-        pass  # TODO:
+        def visit_quantifier(self,
+                             token: QuantifierToken,
+                             var: str,
+                             predicate: T) -> 'FormulaF[U]':
+            return FormulaF(token, var, self.function(predicate))
 
-    @staticmethod
-    def unfold(seed: T, func: Callable[[T], FormulaF[T]]) -> 'Formula':
-        pass  # TODO:
+        def visit_binary(self,
+                         token: BinaryToken,
+                         first_arg: T,
+                         second_arg: T) -> 'FormulaF[U]':
+            return FormulaF(token,
+                            self.function(first_arg),
+                            self.function(second_arg))
+
+        def visit_negation(self, arg: T) -> 'FormulaF[U]':
+            return FormulaF(NotToken.NOT, self.function(arg))
+
+        def visit_contradiction(self) -> 'FormulaF[U]':
+            return FormulaF(ContradictionToken.CONTR)
+
+        def visit_predicate(self,
+                            predicate: str,
+                            args: Sequence[Union[str, T]]) -> 'FormulaF[U]':
+            return FormulaF(predicate, tuple(
+                cast(Union[str, U],
+                     arg if isinstance(arg, str) else self.function(arg))
+                for arg in args
+            ))
+
+    def map(self, function: Callable[[T], U]) -> 'FormulaF[U]':
+        """Apply a function to all sub-formulas."""
+        return self.visit(self._MapVisitor(function))
+
+
+class Formula():
+    def __init__(self, formula: FormulaF['Formula']) -> None:
+        self.formula = formula
+
+    def fold(self, visitor: FormulaFVisitor[T, T]) -> T:
+        return self.formula.map(lambda x: x.fold(visitor)).visit(visitor)
+
+    @classmethod
+    def unfold(cls: Type['Formula'], seed: T,
+               function: Callable[[T], FormulaF[T]]) -> 'Formula':
+        return Formula(function(seed).map(lambda x: cls.unfold(x, function)))
