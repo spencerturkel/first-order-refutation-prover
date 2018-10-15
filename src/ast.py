@@ -24,101 +24,93 @@ And so on.
 """
 
 from abc import ABCMeta, abstractmethod
-from typing import Generic, Sequence, Tuple, TypeVar, Union, cast
+from typing import Callable, Generic, Sequence, TypeVar, Union, cast
 
 from .tokens import BinaryToken, ContradictionToken, NotToken, QuantifierToken
 
 T = TypeVar('T')
+U = TypeVar('U')
 
 
-class FormulaVisitor(Generic[T], metaclass=ABCMeta):
+class FormulaFVisitor(Generic[T, U], metaclass=ABCMeta):
 
     @abstractmethod
     def visit_quantifier(self,
                          token: QuantifierToken,
                          variable: str,
-                         sub_formula: 'FormulaC') -> T:
+                         sub_formula: T) -> U:
         ...
 
     @abstractmethod
     def visit_binary(self,
                      token: BinaryToken,
                      variable: str,
-                     sub_formula: 'FormulaC') -> T:
+                     sub_formula: T) -> U:
         ...
 
     @abstractmethod
     def visit_negation(self,
-                       sub_formula: 'FormulaC') -> T:
+                       sub_formula: T) -> U:
         ...
 
     @abstractmethod
-    def visit_contradiction(self) -> T:
+    def visit_contradiction(self) -> U:
         ...
 
     @abstractmethod
     def visit_predicate(self,
                         predicate: str,
-                        args: Sequence[Union[str, 'FormulaC']]) -> T:
+                        args: Sequence[Union[str, T]]) -> U:
         ...
 
 
-class FormulaC:
-    __slots__ = 'tag', 'first_arg', 'second_arg'
+class FormulaF(Generic[T]):
+    __slots__ = '_tag', '_first_arg', '_second_arg'
 
     # TODO: improve typing
     def __init__(self, *args) -> None:
         count_args = len(args)
         if count_args == 1:
-            self.tag = cast(Union[ContradictionToken, NotToken, None,
-                                  BinaryToken, QuantifierToken],
-                            ContradictionToken.CONTR)
+            self._tag = cast(Union[ContradictionToken, NotToken, None,
+                                   BinaryToken, QuantifierToken],
+                             ContradictionToken.CONTR)
         elif count_args == 2:
             if args[0] == NotToken.NOT:
-                self.tag = NotToken.NOT
-                self.first_arg = args[1]
+                self._tag = NotToken.NOT
+                self._first_arg = args[1]
             else:
                 # predicate
-                self.tag = None
-                self.first_arg, self.second_arg = args
+                self._tag = None
+                self._first_arg, self._second_arg = args
         else:
             # quantifier or binary operation
-            self.tag = args[0]
-            self.first_arg = args[1]
-            self.second_arg = args[2]
+            self._tag = args[0]
+            self._first_arg = args[1]
+            self._second_arg = args[2]
 
-    def visit(
-        self,
-        visitor: FormulaVisitor[T]
-    ) -> T:
-        if isinstance(self.tag, QuantifierToken):
-            return visitor.visit_quantifier(self.tag,
-                                            self.first_arg,
-                                            self.second_arg)
-        if isinstance(self.tag, BinaryToken):
-            return visitor.visit_binary(self.tag,
-                                        self.first_arg,
-                                        self.second_arg)
-        if self.tag == NotToken.NOT:
-            return visitor.visit_negation(self.first_arg)
-        if self.tag == ContradictionToken.CONTR:
+    def map(self, func: Callable[[T], U]) -> 'FormulaF[U]':
+        pass  # TODO:
+
+    def visit(self, visitor: FormulaFVisitor[T, U]) -> U:
+        if isinstance(self._tag, QuantifierToken):
+            return visitor.visit_quantifier(self._tag,
+                                            self._first_arg,
+                                            self._second_arg)
+        if isinstance(self._tag, BinaryToken):
+            return visitor.visit_binary(self._tag,
+                                        self._first_arg,
+                                        self._second_arg)
+        if self._tag == NotToken.NOT:
+            return visitor.visit_negation(self._first_arg)
+        if self._tag == ContradictionToken.CONTR:
             return visitor.visit_contradiction()
-        return visitor.visit_predicate(self.first_arg, self.second_arg)
+        return visitor.visit_predicate(self._first_arg, self._second_arg)
 
 
-T_co = TypeVar('T_co', covariant=True)
+class Formula(FormulaF['Formula']):
+    def fold(self, visitor: FormulaFVisitor[T, U]) -> U:
+        pass  # TODO:
 
-FormulaF = Union[
-    Tuple[QuantifierToken, str, T_co],
-    Tuple[BinaryToken, T_co, T_co],
-    Tuple[NotToken, T_co],
-    ContradictionToken,
-    Tuple[str, Tuple[Union[str, T_co], ...]],
-]
-
-Formula0 = FormulaF
-Formula1 = FormulaF[Formula0]
-Formula2 = FormulaF[Formula1]
-Formula3 = FormulaF[Formula2]
-Formula4 = FormulaF[Formula3]
-Formula = Formula4
+    @staticmethod
+    def unfold(seed: T, func: Callable[[T], FormulaF[T]]) -> 'Formula':
+        pass  # TODO:
