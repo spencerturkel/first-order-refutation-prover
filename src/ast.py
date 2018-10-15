@@ -23,11 +23,44 @@ Formula3 = FormulaF[Formula2]
 And so on.
 """
 
-from typing import Callable, Sequence, Tuple, TypeVar, Union, cast
+from abc import ABCMeta, abstractmethod
+from typing import Generic, Sequence, Tuple, TypeVar, Union, cast
 
 from .tokens import BinaryToken, ContradictionToken, NotToken, QuantifierToken
 
 T = TypeVar('T')
+
+
+class FormulaVisitor(Generic[T], metaclass=ABCMeta):
+
+    @abstractmethod
+    def visit_quantifier(self,
+                         token: QuantifierToken,
+                         variable: str,
+                         sub_formula: 'FormulaC') -> T:
+        ...
+
+    @abstractmethod
+    def visit_binary(self,
+                     token: BinaryToken,
+                     variable: str,
+                     sub_formula: 'FormulaC') -> T:
+        ...
+
+    @abstractmethod
+    def visit_negation(self,
+                       sub_formula: 'FormulaC') -> T:
+        ...
+
+    @abstractmethod
+    def visit_contradiction(self) -> T:
+        ...
+
+    @abstractmethod
+    def visit_predicate(self,
+                        predicate: str,
+                        args: Sequence[Union[str, 'FormulaC']]) -> T:
+        ...
 
 
 class FormulaC:
@@ -56,21 +89,21 @@ class FormulaC:
 
     def visit(
         self,
-        on_quantifier: Callable[[QuantifierToken, str, 'FormulaC'], T],
-        on_binary: Callable[[BinaryToken, 'FormulaC', 'FormulaC'], T],
-        on_negation: Callable[['FormulaC'], T],
-        on_contradiction: Callable[[], T],
-        on_predicate: Callable[[str, Sequence[Union[str, 'FormulaC']]], T],
+        visitor: FormulaVisitor[T]
     ) -> T:
         if isinstance(self.tag, QuantifierToken):
-            return on_quantifier(self.tag, self.first_arg, self.second_arg)
+            return visitor.visit_quantifier(self.tag,
+                                            self.first_arg,
+                                            self.second_arg)
         if isinstance(self.tag, BinaryToken):
-            return on_binary(self.tag, self.first_arg, self.second_arg)
+            return visitor.visit_binary(self.tag,
+                                        self.first_arg,
+                                        self.second_arg)
         if self.tag == NotToken.NOT:
-            return on_negation(self.first_arg)
+            return visitor.visit_negation(self.first_arg)
         if self.tag == ContradictionToken.CONTR:
-            return on_contradiction()
-        return on_predicate(self.first_arg, self.second_arg)
+            return visitor.visit_contradiction()
+        return visitor.visit_predicate(self.first_arg, self.second_arg)
 
 
 T_co = TypeVar('T_co', covariant=True)

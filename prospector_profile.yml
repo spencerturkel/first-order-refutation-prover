@@ -25,6 +25,7 @@ pylint:
     - too-many-statements # domain logic not suited for limited statements
     - trailing-comma-tuple # mypy prevents programming errors from this
     - assigning-non-slot # checked by mypy
+    - pointless-statement # allow ellipses in ABCs
     - E0237 # checked by mypy
 
 mccabe:
