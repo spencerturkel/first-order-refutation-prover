@@ -89,9 +89,8 @@ class FormulaF(Generic[T]):
             self._first_arg = first_arg
             self._second_arg = second_arg
         else:
-            self._tag = None
+            self._tag = token
             self._first_arg = first_arg
-            self._second_arg = second_arg
 
     def visit(self, visitor: FormulaFVisitor[T, U]) -> U:
         """Apply a function matching the type of this formula."""
@@ -107,7 +106,7 @@ class FormulaF(Generic[T]):
             return visitor.visit_negation(self._first_arg)
         if self._tag == ContradictionToken.CONTR:
             return visitor.visit_contradiction()
-        return visitor.visit_predicate(self._first_arg, self._second_arg)
+        return visitor.visit_predicate(self._tag, self._first_arg)
 
     class _MapVisitor(FormulaFVisitor[T, 'FormulaF[U]']):
         def __init__(self, function: Callable[[T], U]) -> None:
@@ -147,11 +146,15 @@ class FormulaF(Generic[T]):
         return self.visit(self._MapVisitor(function))
 
 
+class FormulaVisitor(Generic[T], FormulaFVisitor[T, T]):
+    pass
+
+
 class Formula:
     def __init__(self, formula: FormulaF['Formula']) -> None:
         self.formula = formula
 
-    def fold(self, visitor: FormulaFVisitor[T, T]) -> T:
+    def fold(self, visitor: FormulaVisitor[T]) -> T:
         return self.formula.map(lambda x: x.fold(visitor)).visit(visitor)
 
     @classmethod

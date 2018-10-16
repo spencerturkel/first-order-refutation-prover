@@ -28,6 +28,7 @@ pylint:
     - assigning-non-slot # checked by mypy
     - pointless-statement # allow ellipses in ABCs
     - function-redefined # allow overloading
+    - assignment-from-no-return # allow overloading
     - E0237 # checked by mypy
 
 mccabe:
