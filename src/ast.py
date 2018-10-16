@@ -81,9 +81,12 @@ class FormulaF(Generic[T]):
                  second_arg=None):
         if isinstance(token, ContradictionToken):
             self._tag = token
+            self._first_arg = None
+            self._second_arg = None
         elif isinstance(token, NotToken):
             self._tag = token
             self._first_arg = first_arg
+            self._second_arg = None
         elif isinstance(token, (BinaryToken, QuantifierToken)):
             self._tag = token
             self._first_arg = first_arg
@@ -91,6 +94,13 @@ class FormulaF(Generic[T]):
         else:
             self._tag = token
             self._first_arg = first_arg
+            self._second_arg = None
+
+    def __eq__(self, other: object) -> bool:
+        return (isinstance(other, FormulaF)
+                and self._tag == other._tag
+                and self._first_arg == other._first_arg
+                and self._second_arg == other._second_arg)
 
     def visit(self, visitor: FormulaFVisitor[T, U]) -> U:
         """Apply a function matching the type of this formula."""
@@ -151,15 +161,22 @@ class FormulaVisitor(Generic[T], FormulaFVisitor[T, T]):
 
 
 class Formula:
+    """Formula with recursive sub-formulas."""
+
     def __init__(self, formula: FormulaF['Formula']) -> None:
         self.formula = formula
 
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, Formula) and self.formula == other.formula
+
     def fold(self, visitor: FormulaVisitor[T]) -> T:
+        """Consume the formula tree bottom-up."""
         return self.formula.map(lambda x: x.fold(visitor)).visit(visitor)
 
     @classmethod
     def unfold(cls: Type['Formula'], seed: T,
                function: Callable[[T], FormulaF[T]]) -> 'Formula':
+        """Generate the formula tree top-down."""
         return Formula(function(seed).map(lambda x: cls.unfold(x, function)))
 
     @overload

@@ -29,6 +29,7 @@ pylint:
     - pointless-statement # allow ellipses in ABCs
     - function-redefined # allow overloading
     - assignment-from-no-return # allow overloading
+    - protected-access # allow protected access within class
     - E0237 # checked by mypy
 
 mccabe:
