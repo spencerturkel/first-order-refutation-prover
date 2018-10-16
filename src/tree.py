@@ -1,6 +1,6 @@
 """Generic Tree type."""
 
-from typing import Generic, Tuple, TypeVar, Union
+from typing import Generic, Sequence, TypeVar, Union
 
 T_co = TypeVar('T_co', covariant=True)
 
@@ -14,7 +14,7 @@ class Tree(Generic[T_co]):
     )
 
     def __init__(self, value: T_co,
-                 children: Tuple[Union[T_co, 'Tree[T_co]'], ...]) -> None:
+                 children: Sequence[Union[T_co, 'Tree[T_co]']]) -> None:
         self._value = value
         self._children = children
 
