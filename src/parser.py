@@ -34,14 +34,14 @@ class _Parser:
     def _expr(self) -> Formula:
         token = self._next()
         if isinstance(token, QuantifierToken):
-            return token, self._symbol(), self.formula()
+            return Formula.of(token, self._symbol(), self.formula())
         if isinstance(token, BinaryToken):
-            return token, self.formula(), self.formula()
+            return Formula.of(token, self.formula(), self.formula())
         if isinstance(token, NotToken):
-            return token, self.formula()
+            return Formula.of(token, self.formula())
         if isinstance(token, ContradictionToken):
-            return token
-        return cast(str, token), self._objects()
+            return Formula.of(token)
+        return Formula.of(cast(str, token), self._objects())
 
     def _next(self) -> Token:
         if self.peek_token is not None:
