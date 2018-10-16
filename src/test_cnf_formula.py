@@ -1,7 +1,7 @@
-from typing import FrozenSet, List, cast
+from typing import List, cast
 
-from .cnf_formula import CnfFormula
-from .tree import SymbolTree, Tree
+from .cnf_formula import Clause, CnfFormula, SymbolTree
+from .tokens import NotToken
 
 
 def test_simple_formulas() -> List[CnfFormula]:
@@ -17,18 +17,18 @@ def test_simple_formulas() -> List[CnfFormula]:
         CnfFormula(
             frozenset([
                 # an empty clause
-                cast(FrozenSet[Tree[str]], frozenset()),
+                cast(Clause, frozenset()),
             ]),
             frozenset(),
         ),
-        # {{P x}, {P y}, {Q}}
+        # {{P x}, {~ P y}, {Q}}
         CnfFormula(
             frozenset([
                 frozenset([
                     SymbolTree('P', 'x'),
                 ]),
                 frozenset([
-                    SymbolTree('P', 'y'),
+                    (NotToken.NOT, SymbolTree('P', 'y')),
                 ]),
                 frozenset([
                     SymbolTree('Q'),
