@@ -14,7 +14,7 @@ Our assignment is to identify inconsistent sets of of formulae in
 
 - You will write a refutation prover for FOL using first-order resolution (described in next lecture)
 - You will solve the “find inconsistent sets” task, but have some clever innovation(s) to make it better.
-- Must work in Python 3.4+ without any special libraries to be installed
+- Must work in Python 3.5+ without any special libraries to be installed
 - Submit a file p2.py with no outputting code (print or any similar statements) at any level. This file should have a function findIncSet(fSets), where:
   - fSets: A list (the master list) containing lists (the formula sets) of strings.
   - Each string is an S-expression of a well-formed FOL formula.
@@ -99,13 +99,17 @@ objects = symbol objects | formula objects | ε
 ## Environment Setup
 
 1. Download and install [VSCode](https://code.visualstudio.com/)
-2. Download and install [Python 3.4](https://www.python.org/downloads/release/python-344/)
+2. Download and install [Python 3.5](https://www.python.org/downloads/release/python-354/)
 3. Install the [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) extension
 4. Clone this repository
 5. Open the project in VSCode
 6. In VSCode, open the integrated terminal with `` Ctrl-` ``
-7. Run `python3.4 -m venv .venv` to create an isolated virtual environment.
-8. Restart VSCode.
+7. Run `python3.5 -m venv .venv` to create an isolated virtual environment.
+
+   If this command fails, try running python using an absolute path to the
+   Python 3.5 executable, e.g. `C:\Python35\python.exe -m venv .venv`.
+
+8. Restart VSCode and reopen the project.
 9. Open the terminal. It should automatically run a command to activate the virtual environment.
 10. Run `python --version` to verify that you are in the virtual environment with the correct Python version.
 11. Run `pip install -r requirements.txt` to install packages for unit testing, linting, and refactoring.

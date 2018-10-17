@@ -1,16 +1,19 @@
 {
   "editor.formatOnSave": true,
+  "editor.rulers": [80],
   "python.venvPath": "${workspaceFolder}/.venv",
-  "python.pythonPath": ".venv/bin/python",
   "python.formatting.provider": "autopep8",
+  "python.jediEnabled": true,
   "python.linting.enabled": true,
   "python.linting.prospectorEnabled": true,
   "python.linting.prospectorArgs": ["--profile", "prospector_profile.yml"],
+  "python.linting.pylintEnabled": false,
   "python.unitTest.pyTestEnabled": true,
   "python.unitTest.pyTestArgs": ["--doctest-modules", "-v"],
   "[python]": {
     "editor.codeActionsOnSave": {
       "source.organizeImports": true
     }
-  }
+  },
+  "python.pythonPath": ".venv\\Scripts\\python.exe"
 }

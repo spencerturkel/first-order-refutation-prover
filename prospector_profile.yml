@@ -13,14 +13,30 @@ pep257:
   disable:
     - D104
     - D105
+    - D107
     - D203
     - D213
 
 pylint:
   disable:
-    - missing-docstring
-    - too-many-branches
-    - too-many-statements
+    - missing-docstring # docstrings not required on everything
+    - too-many-branches # domain logic not suited for limited branching
+    - too-many-arguments # domain logic not suited for limited arguments
+    - too-many-function-args # domain logic not suited for limited arguments
+    - too-many-statements # domain logic not suited for limited statements
+    - trailing-comma-tuple # mypy prevents programming errors from this
+    - assigning-non-slot # checked by mypy
+    - pointless-statement # allow ellipses in ABCs
+    - function-redefined # allow overloading
+    - assignment-from-no-return # allow overloading
+    - protected-access # allow protected access within class
+    - unused-wildcard-import # allow wildcard imports
+    - E0237 # checked by mypy
 
 mccabe:
   run: false
+
+pyflakes:
+  disable:
+    - F811
+    - F999
