@@ -9,9 +9,29 @@ from typing import (Callable, Generic, Sequence, Type, TypeVar, Union, cast,
                     overload)
 
 from .tokens import BinaryToken, ContradictionToken, NotToken, QuantifierToken
+from .tree import Tree
 
 T = TypeVar('T')
 U = TypeVar('U')
+
+
+class Term(Tree[str]):
+    """Tree of symbols.
+
+    MyPy cannot currently infer the instantiated type of Tree in expressions
+    creating nested Trees, and instead types those expressions as Tree[object].
+    The primary use-case of Trees in this project is to represent the symbol
+    trees in formulas, and this class allows us to create those with minimal
+    boilerplate and minimal fiddling with the type-checker.
+
+    >>> Term('a', Term('p', 'x'), 'b')
+    Tree('a', (Tree('p', ('x',)), 'b'))
+    """
+
+    def __init__(
+        self, value: str, *children: Union[str, 'Term']
+    ) -> None:
+        super().__init__(value, children)
 
 
 class FormulaFVisitor(Generic[T, U], metaclass=ABCMeta):

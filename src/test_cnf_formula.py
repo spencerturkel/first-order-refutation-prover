@@ -1,6 +1,6 @@
 from typing import List, cast
 
-from .cnf_formula import Clause, CnfFormula, SymbolTree
+from .cnf_formula import Clause, CnfFormula, Term
 from .tokens import NotToken
 
 
@@ -25,13 +25,13 @@ def test_simple_formulas() -> List[CnfFormula]:
         CnfFormula(
             frozenset([
                 frozenset([
-                    SymbolTree('P', 'x'),
+                    Term('P', 'x'),
                 ]),
                 frozenset([
-                    (NotToken.NOT, SymbolTree('P', 'y')),
+                    (NotToken.NOT, Term('P', 'y')),
                 ]),
                 frozenset([
-                    SymbolTree('Q'),
+                    Term('Q'),
                 ]),
             ]),
             frozenset(),
@@ -40,14 +40,11 @@ def test_simple_formulas() -> List[CnfFormula]:
         CnfFormula(
             frozenset([
                 frozenset([
-                    SymbolTree('P', 'x'),
-                    SymbolTree('Q', 'x'),
+                    Term('P', 'x'),
+                    Term('Q', 'x'),
                 ]),
                 frozenset([
-                    SymbolTree(
-                        'Q',
-                        SymbolTree('f', 'y'),
-                    ),
+                    Term('Q', Term('f', 'y')),
                 ]),
             ]),
             frozenset(['y']),
@@ -56,12 +53,7 @@ def test_simple_formulas() -> List[CnfFormula]:
         CnfFormula(
             formula=frozenset([
                 frozenset([
-                    SymbolTree(
-                        'P',
-                        'x',
-                        # Skolemized y
-                        SymbolTree('f_y', 'x'),
-                    ),
+                    Term('P', 'x', Term('f_y', 'x')),
                 ]),
             ]),
             variables=frozenset(['x']),

@@ -30,6 +30,7 @@ pylint:
     - function-redefined # allow overloading
     - assignment-from-no-return # allow overloading
     - protected-access # allow protected access within class
+    - unused-wildcard-import # allow wildcard imports
     - E0237 # checked by mypy
 
 mccabe:
@@ -38,3 +39,4 @@ mccabe:
 pyflakes:
   disable:
     - F811
+    - F999
