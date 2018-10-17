@@ -2,7 +2,9 @@ from typing import Callable, List, TypeVar
 
 import pytest
 
-from .ast import Formula, FormulaF, FormulaFoldVisitor, FormulaVisitor
+from .ast import (BinaryFormulaF, ContradictionFormulaF, Formula, FormulaF,
+                  FormulaFoldVisitor, FormulaVisitor, NegatedFormulaF,
+                  PredicateFormulaF, QuantifiedFormulaF, Term)
 from .tokens import BinaryToken, ContradictionToken, NotToken, QuantifierToken
 
 T = TypeVar('T')
@@ -11,37 +13,40 @@ U = TypeVar('U')
 
 def test_formulas() -> List[Formula]:
     return [
-        Formula.of(BinaryToken.IMPLIES,
-                   Formula.of(ContradictionToken.CONTR),
-                   Formula.of('a', ())),
-        Formula.of(BinaryToken.AND, Formula.of(
-            NotToken.NOT, Formula.of('a', ())), Formula.of('a', ())),
-        Formula.of(BinaryToken.OR, Formula.of('12', ()), Formula.of('a1', ())),
-        Formula.of(QuantifierToken.FORALL, 'x', Formula.of('p', ('x',))),
-        Formula.of(QuantifierToken.EXISTS, 'x', Formula.of('p', ('x',))),
+        Formula.binary(BinaryToken.IMPLIES,
+                       Formula.contradiction(),
+                       Formula.predicate('a')),
+        Formula.binary(BinaryToken.AND,
+                       Formula.negate(Formula.predicate('a')),
+                       Formula.predicate('a')),
+        Formula.binary(BinaryToken.OR,
+                       Formula.predicate('12'),
+                       Formula.predicate('a1')),
+        Formula.quantify(QuantifierToken.FORALL, 'x',
+                         Formula.predicate('p', Term('x'))),
+        Formula.quantify(QuantifierToken.EXISTS, 'x',
+                         Formula.predicate('p', Term('f', 'x'))),
     ]
 
 
-class DepthCountingVisitor(FormulaFoldVisitor[int]):
+class TermCountingVisitor(FormulaFoldVisitor[int]):
     def visit_quantifier(self, _, _1, n):
-        return 1 + n
+        return n
 
     def visit_binary(self, _, n, m):
-        return 1 + max(n, m)
+        return n + m
 
     def visit_negation(self, n):
-        return 1 + n
+        return n
 
     def visit_contradiction(self):
-        return 1
+        return 0
 
-    def visit_predicate(self, _, args):
-        return 1 + max(
-            map(lambda x: x if isinstance(x, int) else 1, args),
-            default=0)
+    def visit_predicate(self, _, terms):
+        return len(terms)
 
 
-class SymbolCollectingVisitor(FormulaFoldVisitor[List[str]]):
+class VariableCollectingVisitor(FormulaFoldVisitor[List[str]]):
     def visit_quantifier(self, _, var, others: List[str]):
         others.insert(0, var)
         return others
@@ -56,32 +61,26 @@ class SymbolCollectingVisitor(FormulaFoldVisitor[List[str]]):
     def visit_contradiction(self):
         return []
 
-    def visit_predicate(self, predicate, args):
-        result = [predicate]
-        for item in args:
-            if isinstance(item, str):
-                result.append(item)
-            else:
-                result.extend(item)
-        return result
+    def visit_predicate(self, _1, _2):
+        return []
 
 
 @pytest.mark.parametrize('formula, visitor, result', [
-    (Formula.of(
+    (Formula.binary(
         BinaryToken.IMPLIES,
-        Formula.of(ContradictionToken.CONTR),
-        Formula.of('p', ('x', 'y')),
-    ), DepthCountingVisitor(), 3),
-    (Formula.of(
+        Formula.contradiction(),
+        Formula.predicate('p', Term('x'), Term('y')),
+    ), TermCountingVisitor(), 2),
+    (Formula.binary(
+        BinaryToken.AND,
+        Formula.predicate('p', Term('x'), Term('y')),
+        Formula.predicate('p', Term('q', Term('x', 'y')), Term('z')),
+    ), TermCountingVisitor(), 4),
+    (Formula.quantify(
         QuantifierToken.FORALL,
         'x',
-        Formula.of('p', (Formula.of('q', ('x', 'y')), 'z')),
-    ), DepthCountingVisitor(), 4),
-    (Formula.of(
-        QuantifierToken.FORALL,
-        'x',
-        Formula.of('p', (Formula.of('q', ('x', 'y')), 'z')),
-    ), SymbolCollectingVisitor(), ['x', 'p', 'q', 'x', 'y', 'z']),
+        Formula.predicate('p', Term('q', Term('x', 'y')), Term('z')),
+    ), VariableCollectingVisitor(), ['x', 'p', 'q', 'x', 'y', 'z']),
 ])
 def test_fold(formula: Formula, visitor: FormulaFoldVisitor[T], result: T):
     assert formula.fold(visitor) == result
@@ -90,67 +89,66 @@ def test_fold(formula: Formula, visitor: FormulaFoldVisitor[T], result: T):
 def test_unfold():
     def generator(num):
         if num == 2:
-            return FormulaF(BinaryToken.IMPLIES, 1, 1)
+            return BinaryFormulaF(BinaryToken.IMPLIES, 1, 1)
         if num == 1:
-            return FormulaF(QuantifierToken.FORALL, 'x', 0)
-        return FormulaF(ContradictionToken.CONTR)
+            return QuantifiedFormulaF(QuantifierToken.FORALL, 'x', 0)
+        return ContradictionFormulaF()
 
-    assert Formula.unfold(2, generator) == Formula.of(
+    assert Formula.unfold(2, generator) == Formula.binary(
         BinaryToken.IMPLIES,
-        Formula.of(QuantifierToken.FORALL, 'x',
-                   Formula.of(ContradictionToken.CONTR)),
-        Formula.of(QuantifierToken.FORALL, 'x',
-                   Formula.of(ContradictionToken.CONTR)),
+        Formula.quantify(QuantifierToken.FORALL, 'x',
+                         Formula.contradiction()),
+        Formula.quantify(QuantifierToken.FORALL, 'x',
+                         Formula.contradiction()),
     )
 
 
 @pytest.mark.parametrize('formula, mapping, result', [
-    (FormulaF(BinaryToken.IMPLIES, 1, 2), str,
-        FormulaF(BinaryToken.IMPLIES, '1', '2')),
-    (FormulaF(QuantifierToken.FORALL, 'x', 5,), lambda x: x + 3,
-     FormulaF(QuantifierToken.FORALL, 'x', 8)),
-    (FormulaF(NotToken.NOT, 3), lambda x: str(x - 1),
-        FormulaF(NotToken.NOT, '2')),
-    (FormulaF('p', ('x', 3, 2)), lambda x: x - 1,
-        FormulaF('p', ('x', 2, 1))),
-    (FormulaF(ContradictionToken.CONTR), lambda x: x - 1,
-        FormulaF(ContradictionToken.CONTR)),
+    (BinaryFormulaF(BinaryToken.IMPLIES, 1, 2), str,
+        BinaryFormulaF(BinaryToken.IMPLIES, '1', '2')),
+    (QuantifiedFormulaF(QuantifierToken.FORALL, 'x', 5,), lambda x: x + 3,
+     QuantifiedFormulaF(QuantifierToken.FORALL, 'x', 8)),
+    (NegatedFormulaF(3), lambda x: str(x - 1),
+        NegatedFormulaF('2')),
+    (PredicateFormulaF('p', [Term('f', 'y', 'z')]), lambda x: x - 1,
+        PredicateFormulaF('p', [Term('f', 'y', 'z')])),
+    (ContradictionFormulaF(), lambda x: x - 1,
+        ContradictionFormulaF()),
 ])
 def test_map(formula: FormulaF[T], mapping: Callable[[T], U],
              result: FormulaF[U]):
     assert formula.map(mapping) == result
 
 
-class SubformulaCountingVisitor(FormulaVisitor[int]):
-    def visit_quantifier(self, _, _1, others: Formula) -> int:
-        return 1 + others.visit(self)
+class ContradictionFindingVisitor(FormulaVisitor[bool]):
+    def visit_quantifier(self, _, _1, formula: Formula) -> bool:
+        return formula.visit(self)
 
-    def visit_binary(self, _, left: Formula, right: Formula) -> int:
-        return 1 + max(left.visit(self), right.visit(self))
+    def visit_binary(self, _, left: Formula, right: Formula) -> bool:
+        return left.visit(self) or right.visit(self)
 
-    def visit_negation(self, inner: Formula):
-        return 1 + inner.visit(self)
+    def visit_negation(self, formula: Formula) -> bool:
+        return formula.visit(self)
 
-    def visit_contradiction(self):
-        return 1
+    def visit_contradiction(self) -> bool:
+        return True
 
-    def visit_predicate(self, _, args):
-        return 1 + max((arg.visit(self) if isinstance(arg, Formula) else 1
-                        for arg in args), default=0)
+    def visit_predicate(self, _1, _2) -> bool:
+        return False
 
 
 @pytest.mark.parametrize(
     'formula, visitor, result', [
-        (Formula.of(
+        (Formula.binary(
             BinaryToken.IMPLIES,
-            Formula.of(ContradictionToken.CONTR),
-            Formula.of('p', ('x', 'y')),
-        ), SubformulaCountingVisitor(), 3),
-        (Formula.of(
+            Formula.contradiction(),
+            Formula.predicate('p', Term('x', 'y')),
+        ), ContradictionFindingVisitor(), True),
+        (Formula.quantify(
             QuantifierToken.FORALL,
             'x',
-            Formula.of('p', (Formula.of('q', ('x', 'y')), 'z')),
-        ), SubformulaCountingVisitor(), 4),
+            Formula.predicate('p', Term('f', 'x', 'y'), Term('z')),
+        ), ContradictionFindingVisitor(), False),
     ]
 )
 def test_visit(formula: Formula, visitor: FormulaVisitor[T], result: T):

@@ -2,7 +2,7 @@ from typing import Iterable
 
 import pytest
 
-from .ast import Formula
+from .ast import Formula, Term
 from .parser import parse
 from .tokens import (BinaryToken, ContradictionToken, NotToken,
                      ParenthesisToken, QuantifierToken, Token)
@@ -13,7 +13,8 @@ from .tokens import (BinaryToken, ContradictionToken, NotToken,
       QuantifierToken.FORALL, 'x',
       ParenthesisToken.LEFT, 'p', 'x', ParenthesisToken.RIGHT,
       ParenthesisToken.RIGHT],
-     Formula.of(QuantifierToken.FORALL, 'x', Formula.of('p', ('x',)))),
+     Formula.quantify(QuantifierToken.FORALL, 'x',
+                      Formula.predicate('p', 'x'))),
     ([ParenthesisToken.LEFT,
       BinaryToken.IMPLIES,
       ParenthesisToken.LEFT, 'p', 'x', ParenthesisToken.RIGHT,
@@ -21,10 +22,10 @@ from .tokens import (BinaryToken, ContradictionToken, NotToken,
       ParenthesisToken.LEFT, 'p', 'y', ParenthesisToken.RIGHT,
       ParenthesisToken.RIGHT,
       ParenthesisToken.RIGHT],
-     Formula.of(BinaryToken.IMPLIES,
-                Formula.of('p', ('x',)),
-                Formula.of(QuantifierToken.EXISTS, 'y',
-                           Formula.of('p', ('y',))))),
+     Formula.binary(BinaryToken.IMPLIES,
+                    Formula.predicate('p', 'x'),
+                    Formula.quantify(QuantifierToken.EXISTS, 'y',
+                                     Formula.predicate('p', 'y')))),
     ([ParenthesisToken.LEFT,
       BinaryToken.IMPLIES,
       ParenthesisToken.LEFT, 'p',
@@ -36,30 +37,25 @@ from .tokens import (BinaryToken, ContradictionToken, NotToken,
       ParenthesisToken.RIGHT,
       ParenthesisToken.LEFT, ContradictionToken.CONTR, ParenthesisToken.RIGHT,
       ParenthesisToken.RIGHT],
-     Formula.of(BinaryToken.IMPLIES,
-                Formula.of(
-                    'p',
-                    (Formula.of(
-                        'f',
-                        (Formula.of(
-                            NotToken.NOT,
-                            Formula.of('x', ())
-                        ),)
-                    ),)
-                ),
-                Formula.of(ContradictionToken.CONTR))),
+     Formula.binary(BinaryToken.IMPLIES,
+                    Formula.predicate('p', Term('f', 'x')),
+                    Formula.contradiction())),
     ([ParenthesisToken.LEFT,
       BinaryToken.AND,
       ParenthesisToken.LEFT, 'p', ParenthesisToken.RIGHT,
       ParenthesisToken.LEFT, 'p', ParenthesisToken.RIGHT,
       ParenthesisToken.RIGHT],
-     Formula.of(BinaryToken.AND, Formula.of('p', ()), Formula.of('p', ()))),
+     Formula.binary(BinaryToken.AND,
+                    Formula.predicate('p'),
+                    Formula.predicate('p'))),
     ([ParenthesisToken.LEFT,
       BinaryToken.OR,
       ParenthesisToken.LEFT, 'p', ParenthesisToken.RIGHT,
       ParenthesisToken.LEFT, 'p', ParenthesisToken.RIGHT,
       ParenthesisToken.RIGHT],
-     Formula.of(BinaryToken.OR, Formula.of('p', ()), Formula.of('p', ()))),
+     Formula.binary(BinaryToken.OR,
+                    Formula.predicate('p'),
+                    Formula.predicate('p'))),
     ([ParenthesisToken.LEFT,
       BinaryToken.AND,
       ParenthesisToken.LEFT,
@@ -67,10 +63,10 @@ from .tokens import (BinaryToken, ContradictionToken, NotToken,
       ParenthesisToken.RIGHT,
       ParenthesisToken.LEFT, 'a', ParenthesisToken.RIGHT,
       ParenthesisToken.RIGHT],
-     Formula.of(
+     Formula.binary(
         BinaryToken.AND,
-        Formula.of(NotToken.NOT, Formula.of('a', ())),
-        Formula.of('a', ())
+        Formula.negate(Formula.predicate('a')),
+        Formula.predicate('a')
     ))
 ])
 def test_good_parses(tokens: Iterable[Token], ast: Formula):

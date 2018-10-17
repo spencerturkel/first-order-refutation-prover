@@ -1,8 +1,61 @@
 """Generic Tree type."""
 
-from typing import Generic, Sequence, TypeVar, Union
+from abc import ABCMeta, abstractmethod
+from typing import Callable, Generic, Sequence, TypeVar
 
+T = TypeVar('T')
+U = TypeVar('U')
 T_co = TypeVar('T_co', covariant=True)
+U_co = TypeVar('U_co', covariant=True)
+V = TypeVar('V')
+
+
+class Either(Generic[T, U], metaclass=ABCMeta):
+    @abstractmethod
+    def match(self,
+              on_left: Callable[[T], V],
+              on_right: Callable[[U], V]) -> V:
+        ...
+
+    def map(self, function: Callable[[U], V]) -> 'Either[T, V]':
+        return self.match(Left, lambda x: Right(function(x)))
+
+
+class Left(Generic[T_co, U_co], Either[T_co, U_co]):
+    def __init__(self, value: T_co) -> None:
+        self._value = value
+
+    def match(self, on_left: Callable[[T_co], V], _) -> V:
+        return on_left(self._value)
+
+
+class Right(Generic[T_co, U_co], Either[T_co, U_co]):
+    def __init__(self, value: U_co) -> None:
+        self._value = value
+
+    def match(self, _, on_right: Callable[[U_co], V]) -> V:
+        return on_right(self._value)
+
+
+class TreeF(Generic[T_co, U_co]):
+    """Tree pattern functor."""
+
+    __slots__ = (
+        '_root',
+        '_children',
+    )
+
+    def __init__(self, root: T_co,
+                 children: Sequence[Either[T_co, U_co]]) -> None:
+        self._root = root
+        self._children = children
+
+    def __repr__(self):
+        return '{}({}, {})'.format(
+            Tree.__name__,
+            repr(self._root),
+            repr(self._children),
+        )
 
 
 class Tree(Generic[T_co]):
@@ -10,17 +63,13 @@ class Tree(Generic[T_co]):
 
     __slots__ = (
         '_value',
-        '_children',
     )
 
-    def __init__(self, value: T_co,
-                 children: Sequence[Union[T_co, 'Tree[T_co]']]) -> None:
+    def __init__(self, value: TreeF[T_co, 'Tree[T_co]']) -> None:
         self._value = value
-        self._children = children
 
     def __repr__(self):
-        return '{}({}, {})'.format(
-            Tree.__name__,
+        return '{}({})'.format(
+            self.__class__.__name__,
             repr(self._value),
-            repr(self._children),
         )

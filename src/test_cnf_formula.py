@@ -1,6 +1,6 @@
 from typing import List, cast
 
-from .ast import term
+from .ast import Term
 from .cnf_formula import Clause, CnfFormula
 from .tokens import NotToken
 
@@ -26,13 +26,13 @@ def test_simple_formulas() -> List[CnfFormula]:
         CnfFormula(
             frozenset([
                 frozenset([
-                    term('P', 'x'),
+                    Term('P', 'x'),
                 ]),
                 frozenset([
-                    (NotToken.NOT, term('P', 'y')),
+                    (NotToken.NOT, Term('P', 'y')),
                 ]),
                 frozenset([
-                    term('Q'),
+                    Term('Q'),
                 ]),
             ]),
             frozenset(),
@@ -41,11 +41,11 @@ def test_simple_formulas() -> List[CnfFormula]:
         CnfFormula(
             frozenset([
                 frozenset([
-                    term('P', 'x'),
-                    term('Q', 'x'),
+                    Term('P', 'x'),
+                    Term('Q', 'x'),
                 ]),
                 frozenset([
-                    term('Q', term('f', 'y')),
+                    Term('Q', Term('f', 'y')),
                 ]),
             ]),
             frozenset(['y']),
@@ -54,7 +54,7 @@ def test_simple_formulas() -> List[CnfFormula]:
         CnfFormula(
             formula=frozenset([
                 frozenset([
-                    term('P', 'x', term('f_y', 'x')),
+                    Term('P', 'x', Term('f_y', 'x')),
                 ]),
             ]),
             variables=frozenset(['x']),
