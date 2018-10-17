@@ -1,8 +1,7 @@
 from typing import List, cast
 
 from .ast import Term
-from .cnf_formula import Clause, CnfFormula
-from .tokens import NotToken
+from .cnf_formula import Clause, CnfFormula, Literal
 
 
 def test_simple_formulas() -> List[CnfFormula]:
@@ -26,13 +25,13 @@ def test_simple_formulas() -> List[CnfFormula]:
         CnfFormula(
             frozenset([
                 frozenset([
-                    Term('P', 'x'),
+                    Literal(True, Term('P', 'x')),
                 ]),
                 frozenset([
-                    (NotToken.NOT, Term('P', 'y')),
+                    Literal(False, Term('P', 'y')),
                 ]),
                 frozenset([
-                    Term('Q'),
+                    Literal(True, Term('Q')),
                 ]),
             ]),
             frozenset(),
@@ -41,11 +40,11 @@ def test_simple_formulas() -> List[CnfFormula]:
         CnfFormula(
             frozenset([
                 frozenset([
-                    Term('P', 'x'),
-                    Term('Q', 'x'),
+                    Literal(True, Term('P', 'x')),
+                    Literal(True, Term('Q', 'x')),
                 ]),
                 frozenset([
-                    Term('Q', Term('f', 'y')),
+                    Literal(True, Term('Q', Term('f', 'y'))),
                 ]),
             ]),
             frozenset(['y']),
@@ -54,7 +53,7 @@ def test_simple_formulas() -> List[CnfFormula]:
         CnfFormula(
             formula=frozenset([
                 frozenset([
-                    Term('P', 'x', Term('f_y', 'x')),
+                    Literal(True, Term('P', 'x', Term('f_y', 'x'))),
                 ]),
             ]),
             variables=frozenset(['x']),
