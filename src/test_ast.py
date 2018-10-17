@@ -5,7 +5,7 @@ import pytest
 from .ast import (BinaryFormulaF, ContradictionFormulaF, Formula, FormulaF,
                   FormulaFoldVisitor, FormulaVisitor, NegatedFormulaF,
                   PredicateFormulaF, QuantifiedFormulaF, Term)
-from .tokens import BinaryToken, ContradictionToken, NotToken, QuantifierToken
+from .tokens import BinaryToken, QuantifierToken
 
 T = TypeVar('T')
 U = TypeVar('U')
