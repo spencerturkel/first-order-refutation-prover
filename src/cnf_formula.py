@@ -2,10 +2,10 @@
 
 from typing import FrozenSet, Tuple, Union
 
-from .ast import Term
 from .tokens import NotToken
+from .tree import Tree
 
-Literal = Union[Tuple[NotToken, Term], Term]
+Literal = Union[Tuple[NotToken, Tree[str]], Tree[str]]
 Clause = FrozenSet[Literal]
 
 
