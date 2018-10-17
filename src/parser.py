@@ -68,9 +68,10 @@ class _Parser:
         while True:
             token = self._peek()
             if isinstance(token, str):
-                terms.append(Term(token))
                 self._next()
+                terms.append(Term(token))
             elif token == ParenthesisToken.LEFT:
+                self._next()
                 terms.append(self._sub_term())
             else:
                 return terms
@@ -84,7 +85,6 @@ class _Parser:
         return self.peek_token
 
     def _sub_term(self) -> Tree[str]:
-        self._expect(ParenthesisToken.LEFT)
         root = self._next()
         if not isinstance(root, str):
             raise ParseError

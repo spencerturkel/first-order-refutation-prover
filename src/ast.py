@@ -125,9 +125,23 @@ class QuantifiedFormulaF(Generic[T], FormulaF[T]):
         self._variable = variable
         self._formula = formula
 
+    def __eq__(self, other: object) -> bool:
+        return (isinstance(other, QuantifiedFormulaF)
+                and self._token == other._token
+                and self._variable == other._variable
+                and self._formula == other._formula)
+
     def visit(self, visitor: FormulaFVisitor[T, U]) -> U:
         return visitor.visit_quantifier(
             self._token, self._variable, self._formula)
+
+    def __repr__(self) -> str:
+        return '{}({}, {}, {})'.format(
+            self.__class__.__name__,
+            self._token,
+            self._variable,
+            self._formula,
+        )
 
 
 class BinaryFormulaF(Generic[T], FormulaF[T]):
@@ -143,14 +157,36 @@ class BinaryFormulaF(Generic[T], FormulaF[T]):
         self._first_arg = first_arg
         self._second_arg = second_arg
 
+    def __eq__(self, other: object) -> bool:
+        return (isinstance(other, BinaryFormulaF)
+                and self._token == other._token
+                and self._first_arg == other._first_arg
+                and self._second_arg == other._second_arg)
+
     def visit(self, visitor: FormulaFVisitor[T, U]) -> U:
         return visitor.visit_binary(
             self._token, self._first_arg, self._second_arg)
+
+    def __repr__(self) -> str:
+        return '{}({}, {}, {})'.format(
+            self.__class__.__name__,
+            self._token,
+            self._first_arg,
+            self._second_arg,
+        )
 
 
 class ContradictionFormulaF(Generic[T], FormulaF[T]):
     def visit(self, visitor: FormulaFVisitor[T, U]) -> U:
         return visitor.visit_contradiction()
+
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, ContradictionFormulaF)
+
+    def __repr__(self) -> str:
+        return '{}()'.format(
+            self.__class__.__name__,
+        )
 
 
 class NegatedFormulaF(Generic[T], FormulaF[T]):
@@ -161,8 +197,18 @@ class NegatedFormulaF(Generic[T], FormulaF[T]):
     def __init__(self, formula: T) -> None:
         self._formula = formula
 
+    def __eq__(self, other: object) -> bool:
+        return (isinstance(other, NegatedFormulaF)
+                and self._formula == other._formula)
+
     def visit(self, visitor: FormulaFVisitor[T, U]) -> U:
         return visitor.visit_negation(self._formula)
+
+    def __repr__(self) -> str:
+        return '{}({})'.format(
+            self.__class__.__name__,
+            self._formula,
+        )
 
 
 class PredicateFormulaF(Generic[T], FormulaF[T]):
@@ -175,8 +221,20 @@ class PredicateFormulaF(Generic[T], FormulaF[T]):
         self._predicate = predicate
         self._terms = terms
 
+    def __eq__(self, other: object) -> bool:
+        return (isinstance(other, PredicateFormulaF)
+                and self._predicate == other._predicate
+                and self._terms == other._terms)
+
     def visit(self, visitor: FormulaFVisitor[T, U]) -> U:
         return visitor.visit_predicate(self._predicate, self._terms)
+
+    def __repr__(self) -> str:
+        return '{}({}, {})'.format(
+            self.__class__.__name__,
+            self._predicate,
+            self._terms,
+        )
 
 
 class FormulaVisitor(Generic[T], FormulaFVisitor['Formula', T]):
@@ -190,11 +248,21 @@ class FormulaFoldVisitor(Generic[T], FormulaFVisitor[T, T]):
 class Formula:
     """Formula with recursive sub-formulas."""
 
+    __slots__ = (
+        'formula',
+    )
+
     def __init__(self, formula: FormulaF['Formula']) -> None:
         self.formula = formula
 
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Formula) and self.formula == other.formula
+
+    def __repr__(self) -> str:
+        return '{}({})'.format(
+            self.__class__.__name__,
+            self.formula,
+        )
 
     def fold(self, visitor: FormulaFoldVisitor[T]) -> T:
         """Consume the formula tree bottom-up."""

@@ -79,8 +79,11 @@ class VariableCollectingVisitor(FormulaFoldVisitor[List[str]]):
     (Formula.quantify(
         QuantifierToken.FORALL,
         'x',
-        Formula.predicate('p', Term('q', Term('x', 'y')), Term('z')),
-    ), VariableCollectingVisitor(), ['x', 'p', 'q', 'x', 'y', 'z']),
+        Formula.quantify(
+            QuantifierToken.EXISTS,
+            'y',
+            Formula.predicate('p', Term('q', Term('x', 'y')), Term('z'))),
+    ), VariableCollectingVisitor(), ['x', 'y']),
 ])
 def test_fold(formula: Formula, visitor: FormulaFoldVisitor[T], result: T):
     assert formula.fold(visitor) == result
