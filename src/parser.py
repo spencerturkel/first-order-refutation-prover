@@ -1,10 +1,11 @@
 """Formula string parsing module."""
 
-from typing import Iterator, List, Optional, Tuple, Union, cast
+from typing import Iterator, List, Optional, Sequence, Union, cast
 
-from .ast import Formula
+from .ast import Formula, Term
 from .tokens import (BinaryToken, ContradictionToken, NotToken,
                      ParenthesisToken, QuantifierToken, Token)
+from .tree import Tree
 
 
 def parse(formula_tokens: Iterator[Token]) -> Formula:
@@ -17,6 +18,11 @@ class ParseError(Exception):
 
 
 class _Parser:
+    __slots__ = (
+        'peek_token',
+        'tokens',
+    )
+
     def __init__(self, tokens: Iterator[Token]) -> None:
         self.peek_token = cast(Optional[Token], None)
         self.tokens = tokens
@@ -34,14 +40,14 @@ class _Parser:
     def _expr(self) -> Formula:
         token = self._next()
         if isinstance(token, QuantifierToken):
-            return Formula.of(token, self._symbol(), self.formula())
+            return Formula.quantify(token, self._symbol(), self.formula())
         if isinstance(token, BinaryToken):
-            return Formula.of(token, self.formula(), self.formula())
+            return Formula.binary(token, self.formula(), self.formula())
         if isinstance(token, NotToken):
-            return Formula.of(token, self.formula())
+            return Formula.negate(self.formula())
         if isinstance(token, ContradictionToken):
-            return Formula.of(token)
-        return Formula.of(cast(str, token), self._objects())
+            return Formula.contradiction()
+        return Formula.predicate(cast(str, token), *self._terms())
 
     def _next(self) -> Token:
         if self.peek_token is not None:
@@ -57,20 +63,17 @@ class _Parser:
             raise ParseError
         return sym
 
-    def _objects(self) -> Tuple[Union[str, Formula], ...]:
-        objs = cast(List[Union[str, Formula]], [])
+    def _terms(self) -> Sequence[Tree[str]]:
+        terms = cast(List[Tree[str]], [])
         while True:
             token = self._peek()
             if isinstance(token, str):
-                objs.append(token)
+                terms.append(Term(token))
                 self._next()
             elif token == ParenthesisToken.LEFT:
-                self._next()
-                expr = self._expr()
-                self._expect(ParenthesisToken.RIGHT)
-                objs.append(expr)
+                terms.append(self._sub_term())
             else:
-                return tuple(objs)
+                return terms
 
     def _peek(self) -> Token:
         if self.peek_token is None:
@@ -79,3 +82,25 @@ class _Parser:
             except StopIteration:
                 raise ParseError
         return self.peek_token
+
+    def _sub_term(self) -> Tree[str]:
+        self._expect(ParenthesisToken.LEFT)
+        root = self._next()
+        if not isinstance(root, str):
+            raise ParseError
+        children = cast(List[Union[str, Tree[str]]], [])
+        while True:
+            token = self._next()
+
+            if token == ParenthesisToken.RIGHT:
+                return Term(root, *children)
+
+            if isinstance(token, str):
+                children.append(token)
+                continue
+
+            if token == ParenthesisToken.LEFT:
+                children.append(self._sub_term())
+                continue
+
+            raise ParseError
