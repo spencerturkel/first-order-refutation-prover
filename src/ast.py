@@ -156,7 +156,11 @@ class FormulaF(Generic[T]):
         return self.visit(self._MapVisitor(function))
 
 
-class FormulaVisitor(Generic[T], FormulaFVisitor[T, T]):
+class FormulaVisitor(Generic[T], FormulaFVisitor['Formula', T]):
+    pass
+
+
+class FormulaFoldVisitor(Generic[T], FormulaFVisitor[T, T]):
     pass
 
 
@@ -169,9 +173,13 @@ class Formula:
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Formula) and self.formula == other.formula
 
-    def fold(self, visitor: FormulaVisitor[T]) -> T:
+    def fold(self, visitor: FormulaFoldVisitor[T]) -> T:
         """Consume the formula tree bottom-up."""
         return self.formula.map(lambda x: x.fold(visitor)).visit(visitor)
+
+    def visit(self, visitor: FormulaVisitor[T]) -> T:
+        """Consume the formula tree bottom-up."""
+        return self.formula.visit(visitor)
 
     @classmethod
     def unfold(cls: Type['Formula'], seed: T,
