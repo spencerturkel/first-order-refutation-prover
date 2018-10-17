@@ -6,6 +6,8 @@ from .tree import Tree
 
 
 class Literal:
+    """A term which may be positive or negative."""
+
     __slots__ = (
         'is_positive',
         'term',
