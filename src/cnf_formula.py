@@ -5,8 +5,8 @@ from typing import FrozenSet, Tuple, Union
 from .tokens import NotToken
 from .tree import Tree
 
-Literal = Union[Tuple[NotToken, Tree[str]], Tree[str]]
-Clause = FrozenSet[Literal]
+Term = Union[Tuple[NotToken, Tree[str]], Tree[str]]
+Clause = FrozenSet[Term]
 
 
 class CnfFormula:
