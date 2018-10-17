@@ -1,6 +1,6 @@
 language: python
 python:
-  - "3.4"
+  - "3.5"
 script:
   - pytest --doctest-modules
   - prospector --profile prospector_profile.yml
