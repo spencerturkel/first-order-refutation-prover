@@ -4,8 +4,8 @@ import pytest
 
 from .ast import Formula, Term
 from .parser import parse
-from .tokens import (BinaryToken, ContradictionToken, NotToken,
-                     ParenthesisToken, QuantifierToken, Token)
+from .tokens import (BinaryToken, NotToken, ParenthesisToken, QuantifierToken,
+                     Token)
 
 
 @pytest.mark.parametrize('tokens, ast', [
@@ -33,12 +33,12 @@ from .tokens import (BinaryToken, ContradictionToken, NotToken,
       ParenthesisToken.LEFT, 'g', 'y', ParenthesisToken.RIGHT,
       'z', ParenthesisToken.RIGHT,
       ParenthesisToken.RIGHT,
-      ParenthesisToken.LEFT, ContradictionToken.CONTR, ParenthesisToken.RIGHT,
+      ParenthesisToken.LEFT, 'h', ParenthesisToken.RIGHT,
       ParenthesisToken.RIGHT],
      Formula.binary(BinaryToken.IMPLIES,
                     Formula.predicate(
                         'p', Term('f', 'x', Term('g', 'y'), 'z')),
-                    Formula.contradiction())),
+                    Formula.predicate('h'))),
     ([ParenthesisToken.LEFT,
       BinaryToken.AND,
       ParenthesisToken.LEFT, 'p', ParenthesisToken.RIGHT,

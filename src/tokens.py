@@ -33,16 +33,10 @@ class NotToken(_RepresentableEnum):
     NOT = 0
 
 
-@unique
-class ContradictionToken(_RepresentableEnum):
-    CONTR = 0
-
-
 Token = Union[
     ParenthesisToken,
     QuantifierToken,
     BinaryToken,
     NotToken,
-    ContradictionToken,
     str,
 ]

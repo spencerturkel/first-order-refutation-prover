@@ -3,8 +3,8 @@
 import string
 from typing import Iterator, List, cast
 
-from .tokens import (BinaryToken, ContradictionToken, NotToken,
-                     ParenthesisToken, QuantifierToken, Token)
+from .tokens import (BinaryToken, NotToken, ParenthesisToken, QuantifierToken,
+                     Token)
 
 
 def lex(formula: str) -> Iterator[Token]:
@@ -30,12 +30,6 @@ def lex(formula: str) -> Iterator[Token]:
                 return
             index += len('XISTS')
             yield QuantifierToken.EXISTS
-        elif char == 'C':
-            index += 1
-            if formula[index: (index + len('ONTR'))] != 'ONTR':
-                return
-            index += len('ONTR')
-            yield ContradictionToken.CONTR
         elif char == 'A':
             index += 1
             if formula[index: (index + len('ND'))] != 'ND':

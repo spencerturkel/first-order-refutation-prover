@@ -1,7 +1,7 @@
 from typing import List
 
-from .tokens import (BinaryToken, ContradictionToken, NotToken,
-                     ParenthesisToken, QuantifierToken, Token)
+from .tokens import (BinaryToken, NotToken, ParenthesisToken, QuantifierToken,
+                     Token)
 
 
 def _test_token_sequences() -> List[List[Token]]:
@@ -44,9 +44,5 @@ def _test_token_sequences() -> List[List[Token]]:
             ParenthesisToken.LEFT, NotToken.NOT,
             ParenthesisToken.LEFT, 'P', 'x', ParenthesisToken.RIGHT,
             ParenthesisToken.RIGHT
-        ],
-        # (CONTR)
-        [
-            ParenthesisToken.LEFT, ContradictionToken.CONTR, ParenthesisToken.RIGHT,
         ],
     ]

@@ -64,10 +64,6 @@ class FormulaFVisitor(Generic[T, U], metaclass=ABCMeta):
         ...
 
     @abstractmethod
-    def visit_contradiction(self) -> U:
-        ...
-
-    @abstractmethod
     def visit_predicate(self, predicate: str, terms: Sequence[Tree[str]]) -> U:
         ...
 
@@ -99,9 +95,6 @@ class FormulaF(Generic[T], metaclass=ABCMeta):
 
         def visit_negation(self, arg: T) -> 'FormulaF[U]':
             return NegatedFormulaF(self.function(arg))
-
-        def visit_contradiction(self) -> 'FormulaF[U]':
-            return ContradictionFormulaF()
 
         def visit_predicate(self, predicate: str,
                             terms: Sequence[Tree[str]]) -> 'FormulaF[U]':
@@ -173,19 +166,6 @@ class BinaryFormulaF(Generic[T], FormulaF[T]):
             self._token,
             self._first_arg,
             self._second_arg,
-        )
-
-
-class ContradictionFormulaF(Generic[T], FormulaF[T]):
-    def visit(self, visitor: FormulaFVisitor[T, U]) -> U:
-        return visitor.visit_contradiction()
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, ContradictionFormulaF)
-
-    def __repr__(self) -> str:
-        return '{}()'.format(
-            self.__class__.__name__,
         )
 
 
@@ -291,10 +271,6 @@ class Formula:
                first_arg: 'Formula',
                second_arg: 'Formula') -> 'Formula':
         return Formula(BinaryFormulaF(token, first_arg, second_arg))
-
-    @classmethod
-    def contradiction(cls: Type['Formula']) -> 'Formula':
-        return cls(ContradictionFormulaF())
 
     @classmethod
     def negate(cls: Type['Formula'], formula: 'Formula') -> 'Formula':

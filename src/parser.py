@@ -3,8 +3,8 @@
 from typing import Iterator, List, Optional, Sequence, Union, cast
 
 from .ast import Formula, Term
-from .tokens import (BinaryToken, ContradictionToken, NotToken,
-                     ParenthesisToken, QuantifierToken, Token)
+from .tokens import (BinaryToken, NotToken, ParenthesisToken, QuantifierToken,
+                     Token)
 from .tree import Tree
 
 
@@ -45,8 +45,6 @@ class _Parser:
             return Formula.binary(token, self.formula(), self.formula())
         if isinstance(token, NotToken):
             return Formula.negate(self.formula())
-        if isinstance(token, ContradictionToken):
-            return Formula.contradiction()
         return Formula.predicate(cast(str, token), *self._terms())
 
     def _next(self) -> Token:

@@ -1,8 +1,7 @@
 import pytest
 
 from .lexer import lex
-from .tokens import (BinaryToken, ContradictionToken, NotToken,
-                     ParenthesisToken, QuantifierToken)
+from .tokens import BinaryToken, NotToken, ParenthesisToken, QuantifierToken
 
 
 @pytest.mark.parametrize('formula, symbols', [
@@ -18,10 +17,10 @@ from .tokens import (BinaryToken, ContradictionToken, NotToken,
         ParenthesisToken.LEFT, '11', 'xx', ParenthesisToken.RIGHT,
         ParenthesisToken.RIGHT,
     ]),
-    ('(IMPLIES (CONTR) (p (f x)))', [
+    ('(IMPLIES (q) (p (f x)))', [
         ParenthesisToken.LEFT,
         BinaryToken.IMPLIES,
-        ParenthesisToken.LEFT, ContradictionToken.CONTR, ParenthesisToken.RIGHT,
+        ParenthesisToken.LEFT, 'q', ParenthesisToken.RIGHT,
         ParenthesisToken.LEFT, 'p',
         ParenthesisToken.LEFT, 'f', 'x', ParenthesisToken.RIGHT,
         ParenthesisToken.RIGHT,
@@ -50,12 +49,10 @@ def test_valid_strings(formula, symbols):
     ('(eXISTS xx (11 xx))', [
         ParenthesisToken.LEFT,
     ]),
-    ('(IMPLIES (CONTR) (p (fF x)))', [
+    ('(IMPLIES (CONTR) (p (f x)))', [
         ParenthesisToken.LEFT,
         BinaryToken.IMPLIES,
-        ParenthesisToken.LEFT, ContradictionToken.CONTR, ParenthesisToken.RIGHT,
-        ParenthesisToken.LEFT, 'p',
-        ParenthesisToken.LEFT, ]),
+        ParenthesisToken.LEFT]),
     ('(IMPLIES (CoNTR) (p (fF x)))', [
         ParenthesisToken.LEFT,
         BinaryToken.IMPLIES,
