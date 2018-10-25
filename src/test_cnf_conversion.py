@@ -42,6 +42,24 @@ from .tokens import BinaryToken, QuantifierToken
             BinaryToken.OR,
             Formula.negate(Formula.predicate('p')),
             Formula.negate(Formula.predicate('q')))),
+    (
+        Formula.negate(Formula.quantify(
+            QuantifierToken.EXISTS,
+            'x',
+            Formula.predicate('q'))),
+        Formula.quantify(
+            QuantifierToken.FORALL,
+            'x',
+            Formula.negate(Formula.predicate('q')))),
+    (
+        Formula.negate(Formula.quantify(
+            QuantifierToken.FORALL,
+            'x',
+            Formula.predicate('q'))),
+        Formula.quantify(
+            QuantifierToken.EXISTS,
+            'x',
+            Formula.negate(Formula.predicate('q')))),
 ])
 def test_normalize_negations(formula: Formula, normalized: Formula):
     assert normalize_negations(formula) == normalized

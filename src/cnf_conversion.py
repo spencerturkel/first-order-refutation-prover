@@ -1,6 +1,10 @@
-from .ast import (BinaryFormulaF, Formula, FormulaF, FormulaVisitor,
-                  NegatedFormulaF, PredicateFormulaF, QuantifiedFormulaF)
+from typing import FrozenSet, Sequence, Tuple
+
+from .ast import (BinaryFormulaF, Formula, FormulaF, FormulaFoldVisitor,
+                  FormulaVisitor, NegatedFormulaF, PredicateFormulaF,
+                  QuantifiedFormulaF)
 from .tokens import BinaryToken, QuantifierToken
+from .tree import Tree
 
 
 class _NegationNormalizingVisitor(FormulaVisitor[FormulaF[Formula]]):
@@ -57,3 +61,36 @@ _negationNormalizingVisitor = _NegationNormalizingVisitor()
 def normalize_negations(formula: Formula) -> Formula:
     return Formula.unfold(formula,
                           lambda f: f.visit(_negationNormalizingVisitor))
+
+
+class _StandardizeVisitor(FormulaFoldVisitor[Tuple[Formula, FrozenSet[str]]]):
+    def visit_quantifier(self,
+                         token: QuantifierToken,
+                         variable: str,
+                         sub_formula: Tuple[Formula, FrozenSet[str]]
+                         ) -> Tuple[Formula, FrozenSet[str]]:
+        pass  # TODO:
+
+    def visit_binary(self,
+                     token: BinaryToken,
+                     first_arg: Tuple[Formula, FrozenSet[str]],
+                     second_arg: Tuple[Formula, FrozenSet[str]]
+                     ) -> Tuple[Formula, FrozenSet[str]]:
+        pass  # TODO:
+
+    def visit_negation(self,
+                       sub_formula: Tuple[Formula, FrozenSet[str]]
+                       ) -> Tuple[Formula, FrozenSet[str]]:
+        pass  # TODO:
+
+    def visit_predicate(self, predicate: str,
+                        terms: Sequence[Tree[str]]
+                        ) -> Tuple[Formula, FrozenSet[str]]:
+        pass  # TODO:
+
+
+_standardizeVisitor = _StandardizeVisitor()
+
+
+def standardize(formula: Formula) -> Formula:
+    return formula.fold(_standardizeVisitor)[0]
