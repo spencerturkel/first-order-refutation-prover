@@ -11,7 +11,7 @@ from . import p2
     ('(IMPLIES (q) (p (f x)))', '( IMPLIES ( q ) ( p ( f x ) ) )'),
     ('(AND (NOT p) (OR (a) (a)))', '( AND ( NOT p ) ( OR ( a ) ( a ) ) )'),
 ])
-def test_valid_strings(formula, symbols):
+def test_lexing(formula, symbols):
     assert list(p2.lex(formula)) == symbols.split(' ')
 
 
@@ -27,5 +27,20 @@ def test_valid_strings(formula, symbols):
     ('( p ( f x ) ( g ( h y y ) z ) )',
      ('p', [('f', ['x']), ('g', [('h', ['y', 'y']), 'z'])])),
 ])
-def test_good_parses(tokens, ast):
+def test_parsing(tokens, ast):
     assert p2.parse(iter(tokens.split(' '))) == ast
+
+
+@pytest.mark.parametrize('formula, normalized', [
+    (('p', []), ('p', [])),
+    (('NOT', ('p', [])), ('NOT', ('p', []))),
+    (('NOT', ('NOT', ('p', []))), ('p', [])),
+    (('NOT', ('FORALL', 'x', ('EXISTS', 'y', ('p', [])))),
+     ('EXISTS', 'x', ('FORALL', 'y', ('NOT', ('p', []))))),
+    (('NOT', ('IMPLIES', ('IMPLIES', ('p', []), ('q', [])), ('q', []))),
+     ('AND', ('OR', ('NOT', ('p', [])), ('q', [])), ('NOT', ('q', [])))),
+    (('NOT', ('AND', ('OR', ('p', []), ('q', [])), ('z', []))),
+     ('OR', ('AND', ('NOT', ('p', [])), ('NOT', ('q', []))), ('NOT', ('z', []))))
+])
+def test_normalization(formula, normalized):
+    assert p2.normalize(formula) == normalized

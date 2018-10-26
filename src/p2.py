@@ -4,6 +4,7 @@ import string
 
 
 def lex(formula):
+    """Stream tokens from the given formula."""
     index = 0
 
     while index < len(formula):
@@ -157,6 +158,41 @@ class _Parser:
 def parse(formula_tokens):
     """Parse the formula tokens into an abstract syntax tree."""
     return _Parser(formula_tokens).formula()
+
+
+def normalize(formula):
+    """Get the normalized form of the formula."""
+    def positive(formula):
+        tag, *args = formula
+
+        if tag in {'FORALL', 'EXISTS'}:
+            return tag, args[0], positive(args[1])
+        if tag == 'IMPLIES':
+            return 'OR', negative(args[0]), positive(args[1])
+        if tag in {'AND', 'OR'}:
+            return tag, positive(args[0]), positive(args[1])
+        if tag == 'NOT':
+            return negative(args[0])
+        return formula
+
+    def negative(formula):
+        tag, *args = formula
+
+        if tag == 'FORALL':
+            return 'EXISTS', args[0], negative(args[1])
+        if tag == 'EXISTS':
+            return 'FORALL', args[0], negative(args[1])
+        if tag == 'IMPLIES':
+            return 'AND', positive(args[0]), negative(args[1])
+        if tag == 'AND':
+            return 'OR', negative(args[0]), negative(args[1])
+        if tag == 'OR':
+            return 'AND', negative(args[0]), negative(args[1])
+        if tag == 'NOT':
+            return positive(args[0])
+        return 'NOT', formula
+
+    return positive(formula)
 
 
 def findIncSet(fSets):  # noqa
