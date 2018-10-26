@@ -259,6 +259,48 @@ def prenex(formula):
     return formula
 
 
+def skolemize(formula):
+    """Generate an equivalent skolemized formula."""
+    def substitute(term, substitutions):
+        if isinstance(term, tuple):
+            return (term[0], list(substitute(subterm, substitutions)
+                                  for subterm in term[1]))
+
+        return substitutions.get(term, term)
+
+    def recur(formula, quantifiers, substitutions):
+        tag, *args = formula
+
+        if tag == 'FORALL':
+            var = args[0]
+
+            return (tag, var,
+                    recur(args[1],
+                          (quantifiers + [var]) if var not in quantifiers
+                          else quantifiers,
+                          substitutions))
+
+        if tag == 'EXISTS':
+            var = args[0]
+
+            substitutions = substitutions.copy()
+            substitutions[var] = (var, quantifiers)
+
+            return recur(args[1], quantifiers, substitutions)
+
+        if tag in {'AND', 'OR'}:
+            return (tag,
+                    recur(args[0], quantifiers, substitutions),
+                    recur(args[1], quantifiers, substitutions))
+
+        if tag == 'NOT':
+            return tag, recur(args[0], quantifiers, substitutions)
+
+        return tag, list(substitute(term, substitutions) for term in args[0])
+
+    return recur(formula, [], dict())
+
+
 def findIncSet(fSets):  # noqa
     """Find indices of inconsistent formula lists.
 

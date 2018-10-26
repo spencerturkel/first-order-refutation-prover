@@ -75,6 +75,30 @@ def test_standardized(formula, standardized):
       ('AND', ('FORALL', '-1', ('p', [])), ('FORALL', '-2', ('q', [])))),
         ('EXISTS', 'x',
          ('FORALL', '-1', ('FORALL', '-2', ('AND', ('p', []), ('q', [])))))),
+    (('FORALL', 'x',
+      ('AND', ('EXISTS', '-1', ('p', [])), ('FORALL', '-2', ('q', [])))),
+        ('FORALL', 'x',
+         ('EXISTS', '-1', ('FORALL', '-2', ('AND', ('p', []), ('q', [])))))),
 ])
 def test_prenex(formula, prenex):
     assert p2.prenex(formula) == prenex
+
+
+@pytest.mark.parametrize('formula, skolemized', [
+    (('OR', ('AND', ('NOT', ('p', [])), ('NOT', ('q', []))), ('NOT', ('z', []))),
+     ('OR', ('AND', ('NOT', ('p', [])), ('NOT', ('q', []))), ('NOT', ('z', [])))),
+    (('EXISTS', 'x', ('FORALL', 'y', ('NOT', ('p', [])))),
+     ('FORALL', 'y', ('NOT', ('p', [])))),
+    (('EXISTS', 'x', ('EXISTS', '-1', ('OR', ('p', []), ('q', [])))),
+        ('OR', ('p', []), ('q', []))),
+    (('FORALL', 'x',
+      ('EXISTS', '-1', ('FORALL', '-2', ('AND', ('p', ['-1']), ('q', []))))),
+        ('FORALL', 'x',
+         ('FORALL', '-2', ('AND', ('p', [('-1', ['x'])]), ('q', []))))),
+    (('FORALL', 'x',
+      ('FORALL', '-1', ('EXISTS', '-2', ('AND', ('p', ['-1']), ('q', ['-2']))))),
+        ('FORALL', 'x',
+         ('FORALL', '-1', ('AND', ('p', ['-1']), ('q', [('-2', ['x', '-1'])]))))),
+])
+def test_skolemize(formula, skolemized):
+    assert p2.skolemize(formula) == skolemized
