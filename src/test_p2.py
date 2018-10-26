@@ -102,3 +102,21 @@ def test_prenex(formula, prenex):
 ])
 def test_skolemize(formula, skolemized):
     assert p2.skolemize(formula) == skolemized
+
+
+@pytest.mark.parametrize('fol, zol, universals', [
+    (('OR', ('AND', ('NOT', ('p', [])), ('NOT', ('q', []))), ('NOT', ('z', []))),
+     ('OR', ('AND', ('NOT', ('p', [])), ('NOT', ('q', []))), ('NOT', ('z', []))),
+     set()),
+    (('FORALL', 'y', ('NOT', ('p', []))), ('NOT', ('p', [])), {'y'}),
+    (('OR', ('p', []), ('q', [])), ('OR', ('p', []), ('q', [])), set()),
+    (('FORALL', 'x',
+      ('FORALL', '-2', ('AND', ('p', [('-1', ['x'])]), ('q', [])))),
+        ('AND', ('p', [('-1', ['x'])]), ('q', [])), {'x', '-2'}),
+    (('FORALL', 'x',
+      ('FORALL', '-1', ('AND', ('p', ['-1']), ('q', [('-2', ['x', '-1'])])))),
+     ('AND', ('p', ['-1']), ('q', [('-2', ['x', '-1'])])),
+        {'x', '-1'}),
+])
+def test_drop_universals(fol, zol, universals):
+    assert p2.drop_universals(fol) == (zol, universals)

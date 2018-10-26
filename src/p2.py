@@ -301,6 +301,17 @@ def skolemize(formula):
     return recur(formula, [], dict())
 
 
+def drop_universals(formula):
+    """Generate an equivalent ZOL formula and its set of universals."""
+    universals = set()
+
+    while formula[0] == 'FORALL':
+        universals.add(formula[1])
+        formula = formula[2]
+
+    return formula, universals
+
+
 def findIncSet(fSets):  # noqa
     """Find indices of inconsistent formula lists.
 
