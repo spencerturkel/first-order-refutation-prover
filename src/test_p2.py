@@ -13,3 +13,19 @@ from . import p2
 ])
 def test_valid_strings(formula, symbols):
     assert list(p2.lex(formula)) == symbols.split(' ')
+
+
+@pytest.mark.parametrize('tokens, ast', [
+    ('( FORALL x ( p x y ) )', ('FORALL', 'x', ('p', ['x', 'y']))),
+    ('( IMPLIES ( p x ) ( EXISTS y ( p y ) ) )',
+     ('IMPLIES', ('p', ['x']), ('EXISTS', 'y', ('p', ['y'])))),
+    ('( IMPLIES ( p ( f x ( g y ) z ) ) ( h ) )',
+     ('IMPLIES', ('p', [('f', ['x', ('g', ['y']), 'z'])]), ('h', []))),
+    ('( AND ( p ) ( p ) )', ('AND', ('p', []), ('p', []))),
+    ('( OR ( p ) ( p ) )', ('OR', ('p', []), ('p', []))),
+    ('( AND ( NOT ( a ) ) ( a ) )', ('AND', ('NOT', ('a', [])), ('a', []))),
+    ('( p ( f x ) ( g ( h y y ) z ) )',
+     ('p', [('f', ['x']), ('g', [('h', ['y', 'y']), 'z'])])),
+])
+def test_good_parses(tokens, ast):
+    assert p2.parse(iter(tokens.split(' '))) == ast
