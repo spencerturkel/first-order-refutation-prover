@@ -56,9 +56,9 @@ def test_normalization(formula, normalized):
     (('OR', ('EXISTS', 'x', ('p', [])), ('EXISTS', 'x', ('q', []))),
         ('OR', ('EXISTS', 'x', ('p', [])), ('EXISTS', '-1', ('q', [])))),
     (('EXISTS', 'x',
-        ('OR', ('FORALL', 'x', ('p', [])), ('FORALL', 'x', ('q', [])))),
+        ('AND', ('FORALL', 'x', ('p', [])), ('FORALL', 'x', ('q', [])))),
         ('EXISTS', 'x',
-         ('OR', ('FORALL', '-1', ('p', [])), ('FORALL', '-2', ('q', []))))),
+         ('AND', ('FORALL', '-1', ('p', [])), ('FORALL', '-2', ('q', []))))),
 ])
 def test_standardized(formula, standardized):
     assert p2.standardize(formula) == standardized
