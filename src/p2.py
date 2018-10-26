@@ -195,6 +195,48 @@ def normalize(formula):
     return positive(formula)
 
 
+def standardize(formula):
+    """Generate an equivalent normalized formula with unique variables."""
+    fresh = -1  # negative since input cannot have '-' character
+    variables = set()
+
+    def substitute(term, substitutions):
+        if isinstance(term, tuple):
+            return (term[0], list(substitute(subterm, substitutions)
+                                  for subterm in term[1]))
+
+        return substitutions.get(term, term)
+
+    def recur(formula, substitutions):
+        nonlocal fresh
+        tag, *args = formula
+
+        if tag in {'FORALL', 'EXISTS'}:
+            var = args[0]
+
+            if var in variables:
+                new_var = str(fresh)
+                fresh -= 1
+                substitutions = substitutions.copy()
+                substitutions[var] = new_var
+                var = new_var
+
+            variables.add(var)
+            return tag, var, recur(args[1], substitutions)
+
+        if tag in {'AND', 'OR'}:
+            return (tag,
+                    recur(args[0], substitutions),
+                    recur(args[1], substitutions))
+
+        if tag == 'NOT':
+            return tag, recur(args[0], substitutions)
+
+        return tag, list(substitute(term, substitutions) for term in args[0])
+
+    return recur(formula, dict())
+
+
 def findIncSet(fSets):  # noqa
     """Find indices of inconsistent formula lists.
 

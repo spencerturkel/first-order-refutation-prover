@@ -44,3 +44,21 @@ def test_parsing(tokens, ast):
 ])
 def test_normalization(formula, normalized):
     assert p2.normalize(formula) == normalized
+
+
+@pytest.mark.parametrize('formula, standardized', [
+    (('OR', ('AND', ('NOT', ('p', [])), ('NOT', ('q', []))), ('NOT', ('z', []))),
+     ('OR', ('AND', ('NOT', ('p', [])), ('NOT', ('q', []))), ('NOT', ('z', [])))),
+    (('EXISTS', 'x', ('FORALL', 'y', ('NOT', ('p', [])))),
+     ('EXISTS', 'x', ('FORALL', 'y', ('NOT', ('p', []))))),
+    (('EXISTS', 'x', ('FORALL', 'x', ('p', ['x', ('f', ['y', 'x'])]))),
+     ('EXISTS', 'x', ('FORALL', '-1', ('p', ['-1', ('f', ['y', '-1'])])))),
+    (('OR', ('EXISTS', 'x', ('p', [])), ('EXISTS', 'x', ('q', []))),
+        ('OR', ('EXISTS', 'x', ('p', [])), ('EXISTS', '-1', ('q', [])))),
+    (('EXISTS', 'x',
+        ('OR', ('FORALL', 'x', ('p', [])), ('FORALL', 'x', ('q', [])))),
+        ('EXISTS', 'x',
+         ('OR', ('FORALL', '-1', ('p', [])), ('FORALL', '-2', ('q', []))))),
+])
+def test_standardized(formula, standardized):
+    assert p2.standardize(formula) == standardized
