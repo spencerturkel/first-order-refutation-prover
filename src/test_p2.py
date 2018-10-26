@@ -62,3 +62,19 @@ def test_normalization(formula, normalized):
 ])
 def test_standardized(formula, standardized):
     assert p2.standardize(formula) == standardized
+
+
+@pytest.mark.parametrize('formula, prenex', [
+    (('OR', ('AND', ('NOT', ('p', [])), ('NOT', ('q', []))), ('NOT', ('z', []))),
+     ('OR', ('AND', ('NOT', ('p', [])), ('NOT', ('q', []))), ('NOT', ('z', [])))),
+    (('EXISTS', 'x', ('FORALL', 'y', ('NOT', ('p', [])))),
+     ('EXISTS', 'x', ('FORALL', 'y', ('NOT', ('p', []))))),
+    (('OR', ('EXISTS', 'x', ('p', [])), ('EXISTS', '-1', ('q', []))),
+        ('EXISTS', 'x', ('EXISTS', '-1', ('OR', ('p', []), ('q', []))))),
+    (('EXISTS', 'x',
+      ('AND', ('FORALL', '-1', ('p', [])), ('FORALL', '-2', ('q', [])))),
+        ('EXISTS', 'x',
+         ('FORALL', '-1', ('FORALL', '-2', ('AND', ('p', []), ('q', [])))))),
+])
+def test_prenex(formula, prenex):
+    assert p2.prenex(formula) == prenex

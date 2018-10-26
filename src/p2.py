@@ -237,6 +237,28 @@ def standardize(formula):
     return recur(formula, dict())
 
 
+def prenex(formula):
+    """Generate an equivalent prenex formula."""
+    tag, *args = formula
+
+    if tag in {'FORALL', 'EXISTS'}:
+        return tag, args[0], prenex(args[1])
+
+    if tag in {'AND', 'OR'}:
+        fst, snd = map(prenex, args)
+        fst_tag = fst[0]
+        snd_tag = snd[0]
+        if fst_tag in {'FORALL', 'EXISTS'}:
+            if snd_tag in {'FORALL', 'EXISTS'}:
+                return fst_tag, fst[1], (snd_tag, snd[1], (tag, fst[2], snd[2]))
+            return fst_tag, fst[1], (tag, fst[2], snd)
+        if snd_tag in {'FORALL', 'EXISTS'}:
+            return snd_tag, snd[1], (tag, fst, snd[2])
+        return formula
+
+    return formula
+
+
 def findIncSet(fSets):  # noqa
     """Find indices of inconsistent formula lists.
 
