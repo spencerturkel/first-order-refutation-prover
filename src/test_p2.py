@@ -2,7 +2,7 @@
 
 import pytest
 
-from . import p2
+import p2
 
 
 @pytest.mark.parametrize('formula, symbols', [
