@@ -151,11 +151,6 @@ def test_to_cnf(zol, cnf):
      frozenset((frozenset((('NOT', ('p', ())), ('NOT', 'z'))),
                 frozenset((('NOT', ('r', ())), ('NOT', 'z'))))),
      frozenset(('q',))),
-    (' (  NOT p ) ',
-     frozenset((frozenset((('NOT', 'p'),)),)),
-     frozenset()),
-    ('(OR p q)',
-     frozenset((frozenset(('p', 'q')),)), frozenset()),
     ('(OR (FORALL x (AND (p x) (NOT (q)))) (EXISTS y (AND (p y) (q))))',
         frozenset((
             frozenset((('p', ('x',)), ('p', (('y', ('x',)),)))),
@@ -203,16 +198,52 @@ def test_str_to_cnf_universals(s, cnf, universals):
 
 
 @pytest.mark.parametrize('clause_one, clause_two, variables, result', [
-    # {{P(x,y)}, {~P(t,v)}} --> {}
-    (frozenset({('P', ('x', 'y'))}),
-     frozenset({('NOT', ('P', (('t',), ('v',))))}),
-     frozenset({'x', 'y'}),
-     frozenset()),
-    # {{~P(a), Q(a)}, {P(x)}} --> {Q(a)}
-    (frozenset({('NOT', ('P', (('a',)))), ('Q', ('a',))}),
-     frozenset({('P', 'x')}),
-     frozenset({'x', 'y'}),
-     frozenset({('Q', ('a',))})),
+    (frozenset({
+        ('P', ('x',)),
+        ('NOT', ('Q', ('x',))),
+    }),
+        frozenset({
+            ('Q', (('a', ()),))
+        }),
+        frozenset({'x', }),
+        frozenset({
+            ('P', (('a', ()),))
+        })),
+    (frozenset({
+        ('P', ('x',)),
+        ('NOT', ('Q', ('x',))),
+    }),
+        frozenset({
+            ('Q', (('b', ()),))
+        }),
+        frozenset({'x', }),
+        frozenset({
+            ('P', (('b', ()),))
+        })),
+    (frozenset({
+        ('P', (('a', ()),)),
+    }),
+        frozenset({
+            ('NOT', ('P', (('a', ()),))),
+        }),
+        frozenset({'x', }),
+        frozenset()),
+    (frozenset({
+        ('P', (('a', ()),)),
+    }),
+        frozenset({
+            ('NOT', ('P', (('b', ()),))),
+        }),
+        frozenset({'x'}),
+        None),
+    (frozenset({
+        ('P', (('a', ()),)),
+    }),
+        frozenset({
+            ('NOT', ('Q', (('a', ()),))),
+        }),
+        frozenset({'x'}),
+        None),
 ])
-def test_unify(clause_one, clause_two, variables, result):
-    assert p2.unify(clause_one, clause_two, variables) == result
+def test_resolve(clause_one, clause_two, variables, result):
+    assert p2.resolve(clause_one, clause_two, variables) == result

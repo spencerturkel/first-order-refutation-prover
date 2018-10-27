@@ -351,8 +351,46 @@ def str_to_cnf_universals(string):
     return to_cnf(formula), universals
 
 
-def unify(clause_one, clause_two, variables):
-    """Unify each clause, producing the result clause or None."""
+def resolve(clause_one, clause_two, variables):
+    """Resolve the clauses, producing the resolvent clause."""
+    substitutions = dict()
+    resolvent = set()
+    args_one
+    args_two
+
+    def find_args(c1, c2):
+        nonlocal args_one
+        nonlocal args_two
+
+        for literal in c1:
+            if literal[0] == 'NOT':
+                predicate, args_one = literal[1]
+                args_two = next((l[1] for l in c2 if l[0] == predicate),
+                                None)
+            else:
+                predicate, args_one = literal
+                args_two = next((l[1] for l in c2
+                                 if l[0] == 'NOT' and l[1][0] == predicate),
+                                None)
+
+            if args_two is None:
+                resolvent.add(literal)
+                continue
+
+            # TODO: unify args, if unified remove both literals
+
+            # if f(x)/x, x/z is invalid
+            # Nothing can replace a constant
+
+            #P(x,x) , ~P(a,b)
+            # b/x
+            # P(b,b)
+
+    find_args(clause_one, clause_two)
+    find_args(clause_two, clause_one)
+
+    if resolvent == clause_one | clause_two:
+        return None
 
 
 def findIncSet(fSets):  # noqa
