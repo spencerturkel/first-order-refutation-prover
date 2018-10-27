@@ -26,8 +26,8 @@ def test_lexing(formula, symbols):
     ('( AND ( NOT ( a ) ) ( a ) )', ('AND', ('NOT', ('a', ())), ('a', ()))),
     ('( p ( f x ) ( g ( h y y ) z ) )',
      ('p', (('f', ('x', )), ('g', (('h', ('y', 'y', )), 'z', )), ))),
-    ('( NOT ( AND ( OR ( p ) ( EXISTS q ( r ) ) ) z ) )',
-     ('NOT', ('AND', ('OR', ('p', ()), ('EXISTS', 'q', ('r', ()))), 'z')))
+    ('( NOT ( AND ( OR ( p ) ( EXISTS q ( r ) ) ) ( z ) ) )',
+     ('NOT', ('AND', ('OR', ('p', ()), ('EXISTS', 'q', ('r', ()))), ('z', ()))))
 ])
 def test_parsing(tokens, ast):
     assert p2.parse(iter(tokens.split(' '))) == ast
