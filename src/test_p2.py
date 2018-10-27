@@ -26,6 +26,8 @@ def test_lexing(formula, symbols):
     ('( AND ( NOT ( a ) ) ( a ) )', ('AND', ('NOT', ('a', ())), ('a', ()))),
     ('( p ( f x ) ( g ( h y y ) z ) )',
      ('p', (('f', ('x', )), ('g', (('h', ('y', 'y', )), 'z', )), ))),
+    ('( NOT ( AND ( OR ( p ) ( EXISTS q ( r ) ) ) z ) )',
+     ('NOT', ('AND', ('OR', ('p', ()), ('EXISTS', 'q', ('r', ()))), 'z')))
 ])
 def test_parsing(tokens, ast):
     assert p2.parse(iter(tokens.split(' '))) == ast
@@ -91,6 +93,8 @@ def test_prenex(formula, prenex):
      ('FORALL', 'y', ('NOT', ('p', ())))),
     (('EXISTS', 'x', ('EXISTS', '-1', ('OR', ('p', ()), ('q', ())))),
         ('OR', ('p', ()), ('q', ()))),
+    (('FORALL', 'x', ('EXISTS', 'y', ('p', ('x', 'y')))),
+     ('FORALL', 'x', ('p', ('x', ('y', ('x',)))))),
     (('FORALL', 'x',
       ('EXISTS', '-1', ('FORALL', '-2', ('AND', ('p', ('-1',)), ('q', ()))))),
         ('FORALL', 'x',
@@ -140,3 +144,25 @@ def test_drop_universals(fol, zol, universals):
 ])
 def test_to_cnf(zol, cnf):
     assert p2.to_cnf(zol) == cnf
+
+
+@pytest.mark.parametrize('s, cnf, universals', [
+    ('(NOT (AND (OR (p) (EXISTS q (r))) z))',
+     frozenset((frozenset((('NOT', ('p', ())), ('NOT', 'z'))),
+                frozenset((('NOT', ('r', ())), ('NOT', 'z'))))),
+     frozenset(('q',))),
+    (' (  NOT p ) ',
+     frozenset((frozenset((('NOT', 'p'),)),)),
+     frozenset()),
+    ('(OR p q)',
+     frozenset((frozenset(('p', 'q')),)), frozenset()),
+    ('(OR (FORALL x (AND (p x) (NOT (q)))) (EXISTS y (AND (p y) (q))))',
+        frozenset((
+            frozenset((('p', ('x',)), ('p', (('y', ('x',)),)))),
+            frozenset((('p', ('x',)), ('q', ()))),
+            frozenset((('NOT', ('q', ())), ('p', (('y', ('x',)),)))),
+            frozenset((('NOT', ('q', ())), ('q', ()))))),
+     frozenset(('x',))),
+])
+def test_str_to_cnf_universals(s, cnf, universals):
+    assert p2.str_to_cnf_universals(s) == (cnf, universals)

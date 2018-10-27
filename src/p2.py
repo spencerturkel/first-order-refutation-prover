@@ -92,7 +92,11 @@ class _Parser:
         self.tokens = tokens
 
     def formula(self):
-        self._expect('(')
+        token = self._next()
+
+        if token != '(':
+            return token
+
         expr = self._expr()
         self._expect(')')
         return expr
@@ -232,6 +236,9 @@ def standardize(formula):
         if tag == 'NOT':
             return tag, recur(args[0], substitutions)
 
+        if isinstance(formula, str):
+            return formula
+
         return tag, tuple(substitute(term, substitutions) for term in args[0])
 
     return recur(formula, dict())
@@ -296,6 +303,9 @@ def skolemize(formula):
         if tag == 'NOT':
             return tag, recur(args[0], quantifiers, substitutions)
 
+        if isinstance(formula, str):
+            return formula
+
         return tag, tuple(substitute(term, substitutions) for term in args[0])
 
     return recur(formula, (), dict())
@@ -309,7 +319,7 @@ def drop_universals(formula):
         universals.add(formula[1])
         formula = formula[2]
 
-    return formula, universals
+    return formula, frozenset(universals)
 
 
 def to_cnf(formula):
@@ -325,6 +335,22 @@ def to_cnf(formula):
                          for snd in to_cnf(args[1]))
 
     return frozenset((frozenset((formula,)),))
+
+
+def str_to_cnf_universals(string):
+    """Parse an input string into a CNF formula and its universals."""
+    formula, universals = drop_universals(
+        skolemize(
+            prenex(
+                standardize(
+                    normalize(
+                        parse(lex(string))
+                    )
+                )
+            )
+        )
+    )
+    return to_cnf(formula), universals
 
 
 def findIncSet(fSets):  # noqa
