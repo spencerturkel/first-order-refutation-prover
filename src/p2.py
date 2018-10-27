@@ -351,6 +351,10 @@ def str_to_cnf_universals(string):
     return to_cnf(formula), universals
 
 
+def unify(clause_one, clause_two, variables):
+    """Unify each clause, producing the result clause or None."""
+
+
 def findIncSet(fSets):  # noqa
     """Find indices of inconsistent formula lists.
 

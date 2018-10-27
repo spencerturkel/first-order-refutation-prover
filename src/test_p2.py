@@ -200,3 +200,19 @@ def test_to_cnf(zol, cnf):
 ])
 def test_str_to_cnf_universals(s, cnf, universals):
     assert p2.str_to_cnf_universals(s) == (cnf, universals)
+
+
+@pytest.mark.parametrize('clause_one, clause_two, variables, result', [
+    # {{P(x,y)}, {~P(t,v)}} --> {}
+    (frozenset({('P', ('x', 'y'))}),
+     frozenset({('NOT', ('P', (('t',), ('v',))))}),
+     frozenset({'x', 'y'}),
+     frozenset()),
+    # {{~P(a), Q(a)}, {P(x)}} --> {Q(a)}
+    (frozenset({('NOT', ('P', (('a',)))), ('Q', ('a',))}),
+     frozenset({('P', 'x')}),
+     frozenset({'x', 'y'}),
+     frozenset({('Q', ('a',))})),
+])
+def test_unify(clause_one, clause_two, variables, result):
+    assert p2.unify(clause_one, clause_two, variables) == result
