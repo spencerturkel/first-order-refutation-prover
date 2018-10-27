@@ -124,7 +124,7 @@ class _Parser:
         while True:
             token = self._peek()
             if token == ')':
-                return terms
+                return tuple(terms)
             if token == '(':
                 self._next()
                 terms.append(self._sub_term())
@@ -148,7 +148,7 @@ class _Parser:
         while True:
             token = self._next()
             if token == ')':
-                return root, terms
+                return root, tuple(terms)
             if token == '(':
                 terms.append(self._sub_term())
             else:
@@ -202,8 +202,8 @@ def standardize(formula):
 
     def substitute(term, substitutions):
         if isinstance(term, tuple):
-            return (term[0], list(substitute(subterm, substitutions)
-                                  for subterm in term[1]))
+            return (term[0], tuple(substitute(subterm, substitutions)
+                                   for subterm in term[1]))
 
         return substitutions.get(term, term)
 
@@ -232,7 +232,7 @@ def standardize(formula):
         if tag == 'NOT':
             return tag, recur(args[0], substitutions)
 
-        return tag, list(substitute(term, substitutions) for term in args[0])
+        return tag, tuple(substitute(term, substitutions) for term in args[0])
 
     return recur(formula, dict())
 
@@ -263,8 +263,8 @@ def skolemize(formula):
     """Generate an equivalent skolemized formula."""
     def substitute(term, substitutions):
         if isinstance(term, tuple):
-            return (term[0], list(substitute(subterm, substitutions)
-                                  for subterm in term[1]))
+            return (term[0], tuple(substitute(subterm, substitutions)
+                                   for subterm in term[1]))
 
         return substitutions.get(term, term)
 
@@ -276,7 +276,7 @@ def skolemize(formula):
 
             return (tag, var,
                     recur(args[1],
-                          (quantifiers + [var]) if var not in quantifiers
+                          (quantifiers + (var,)) if var not in quantifiers
                           else quantifiers,
                           substitutions))
 
@@ -296,9 +296,9 @@ def skolemize(formula):
         if tag == 'NOT':
             return tag, recur(args[0], quantifiers, substitutions)
 
-        return tag, list(substitute(term, substitutions) for term in args[0])
+        return tag, tuple(substitute(term, substitutions) for term in args[0])
 
-    return recur(formula, [], dict())
+    return recur(formula, (), dict())
 
 
 def drop_universals(formula):
@@ -310,6 +310,21 @@ def drop_universals(formula):
         formula = formula[2]
 
     return formula, universals
+
+
+def to_cnf(formula):
+    """Generate an equivalent CNF formula from a ZOL formula."""
+    tag, *args = formula
+
+    if tag == 'AND':
+        return to_cnf(args[0]) | to_cnf(args[1])
+
+    if tag == 'OR':
+        return frozenset(fst | snd
+                         for fst in to_cnf(args[0])
+                         for snd in to_cnf(args[1]))
+
+    return frozenset((frozenset((formula,)),))
 
 
 def findIncSet(fSets):  # noqa
