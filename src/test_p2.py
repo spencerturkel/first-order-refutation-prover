@@ -53,7 +53,7 @@ def test_normalization(formula, normalized):
      ('OR', ('AND', ('NOT', ('p', ())), ('NOT', ('q', ()))), ('NOT', ('z', ())))),
     (('EXISTS', 'x', ('FORALL', 'y', ('NOT', ('p', ())))),
      ('EXISTS', 'x', ('FORALL', 'y', ('NOT', ('p', ()))))),
-    (('EXISTS', 'x', ('FORALL', 'x', ('p', ('x', ('f', ['y', 'x']))))),
+    (('EXISTS', 'x', ('FORALL', 'x', ('p', ('x', ('f', ('y', 'x')))))),
      ('EXISTS', 'x', ('FORALL', '-1', ('p', ('-1', ('f', ('y', '-1'))))))),
     (('OR', ('EXISTS', 'x', ('p', ())), ('EXISTS', 'x', ('q', ()))),
         ('OR', ('EXISTS', 'x', ('p', ())), ('EXISTS', '-1', ('q', ())))),
@@ -163,6 +163,40 @@ def test_to_cnf(zol, cnf):
             frozenset((('NOT', ('q', ())), ('p', (('y', ('x',)),)))),
             frozenset((('NOT', ('q', ())), ('q', ()))))),
      frozenset(('x',))),
+    ('(FORALL x (IMPLIES (P x) (Q x)))',
+     frozenset({frozenset({('NOT', ('P', ('x',))), ('Q', ('x',))})}),
+     frozenset({'x'})),
+    ('(P (f a))',
+     frozenset({frozenset({('P', (('f', ('a',)),))})}), frozenset()),
+    ('(NOT (Q (f a)))',
+     frozenset({frozenset({('NOT', ('Q', (('f', ('a',)),)))})}), frozenset()),
+    ('(FORALL x (P x))',
+     frozenset({frozenset({('P', ('x',))})}), frozenset({'x'})),
+    ('(NOT (FORALL x (Q x)))',
+     frozenset({frozenset({('NOT', ('Q', (('x', ()),)))})}), frozenset()),
+    ('(EXISTS x (AND (P x) (Q b)))',
+     frozenset({frozenset({('Q', ('b',))}), frozenset({('P', (('x', ()),))})}),
+     frozenset()),
+    ('(NOT (NOT (P a)))',
+     frozenset({frozenset({('P', ('a',))})}),
+     frozenset()),
+    ('(big_f (f a b) (f b c))',
+     frozenset({frozenset({('big_f', (('f', ('a', 'b')), ('f', ('b', 'c'))))})}),
+     frozenset()),
+    ('(NOT (big_f (f a b) (f b c)))',
+     frozenset({frozenset({
+         ('NOT', ('big_f', (('f', ('a', 'b')), ('f', ('b', 'c')))))
+     })}),
+     frozenset()),
+    ('''(FORALL X (FORALL Y (FORALL Z
+            (IMPLIES (AND (big_f X Y) (big_f Y Z)) (big_f X Z))
+        )))''',
+     frozenset({frozenset({
+         ('NOT', ('big_f', ('X', 'Y'))),
+         ('NOT', ('big_f', ('Y', 'Z'))),
+         ('big_f', ('X', 'Z')),
+     })}),
+     frozenset({'X', 'Y', 'Z'})),
 ])
 def test_str_to_cnf_universals(s, cnf, universals):
     assert p2.str_to_cnf_universals(s) == (cnf, universals)

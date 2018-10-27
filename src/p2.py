@@ -67,14 +67,12 @@ def lex(formula):
             result = []
             while True:
                 if char in string.whitespace or char in {'(', ')'}:
-                    yield "".join(result)
+                    yield ''.join(result)
                     break
-                elif char in set(string.ascii_lowercase + string.digits):
-                    result.append(char)
-                    index += 1
-                    char = formula[index]
-                else:
-                    return
+
+                result.append(char)
+                index += 1
+                char = formula[index]
 
 
 class ParseError(Exception):
