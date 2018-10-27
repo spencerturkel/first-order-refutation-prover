@@ -31,6 +31,7 @@ pylint:
     - assignment-from-no-return # allow overloading
     - protected-access # allow protected access within class
     - unused-wildcard-import # allow wildcard imports
+    - relative-beyond-top-level # allow test imports
     - E0237 # checked by mypy
 
 mccabe:
