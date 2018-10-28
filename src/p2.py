@@ -351,138 +351,123 @@ def str_to_cnf_universals(string):
     return to_cnf(formula), universals
 
 
-class Resolver:
-    def __init__(self, left_clause, right_clause, variables):
-        self.left_clause = list(left_clause)
-        self.right_clause = list(right_clause)
-        self.most_general_unifier = set()
+# class Resolver:
+#     def __init__(self, left_clause, right_clause, variables):
+#         self.left_clause = list(left_clause)
+#         self.right_clause = list(right_clause)
+#         self.most_general_unifier
 
-    def resolve(self):
-        while self.left_clause:
-            literal = self.left_clause.pop()
-            resolvent = self.resolve_literal(literal):
-            if resolvent is not None:
-                return resolvent
+#     def resolve(self):
+#         self.most_general_unifier = set()
 
-        return None
+#         while self.left_clause:
+#             literal = self.left_clause.pop()
+#             resolvent = self.resolve_literal(literal)
+#             if resolvent is not None:
+#                 return resolvent
 
-    def resolve_literal(self, literal):
-        if literal[0] == 'NOT':
-            predicate, args_one = literal[1]
-            match = next((l for l in self.right_clause
-                          if l[0] == predicate),
-                         None)
-            if match is None:
-                return None
-            args_two = match[1]
-        else:
-            predicate, args_one = literal
-            match = next((l for l in self.right_clause
-                          if l[0] == 'NOT' and l[1][0] == predicate),
-                         None)
-            if match is None:
-                return None
-            args_two = match[1][1]
+#         return None
 
-        if all(self.unify(fst_arg, snd_arg)
-                for fst_arg, snd_arg in zip(args_one, args_two)):
-            self.left_clause.remove(literal)
-            self.right_clause.remove(match)
-            # TODO: substitute variables throughout resolvent
-            return frozenset(self.left_clause + self.right_clause)
+#     def resolve_literal(self, literal):
+#         if literal[0] == 'NOT':
+#             literal = literal[1]
+#             match = next((l for l in self.right_clause
+#                           if l[0] == literal[0]),
+#                          None)
+#         else:
+#             match = next((l[1] for l in self.right_clause
+#                           if l[0] == 'NOT' and l[1][0] == literal[0]),
+#                          None)
 
-        return None
+#         if match is None:
+#             return None
 
-    def unify(self, fst_arg, snd_arg):
-        """"""
-        while True:
-            for fst, snd in self.most_general_unifier:
-                if isinstance(fst, tuple):
-                    if isinstance(snd, str):
-                        snd, fst = fst, snd
-                        self.most_general_unifier.append((fst, snd))
-                        break
+#         self.unify(literal, match)
 
-                    # snd is a function
-                    fst_fun, fst_args = fst
-                    snd_fun, snd_args = snd
-                    if fst_fun != snd_fun:
-                        return False
-                    self.most_general_unifier.extend((arg_one, arg_two)
-                                                     for arg_one, arg_two
-                                                     in zip(fst_args, snd_args))
-                    break
+#         if all(self.unify(fst_arg, snd_arg)
+#                 for fst_arg, snd_arg in zip(args_one, args_two)):
+#             self.left_clause.remove(literal)
+#             self.right_clause.remove(match)
+#             # TODO: substitute variables throughout resolvent
+#             return frozenset(self.left_clause + self.right_clause)
 
-                # fst is a str
-                if fst == snd:
-                    self.most_general_unifier.remove((fst, snd))
-                    break
+#         return None
 
-                if fst not in {f for (left, right) in self.most_general_unifier
-                               for v in self.variables(left)
-                               | self.variables(right)}
-                    continue  # nothing more to do with this variable
+#     def unify(self, fst_arg, snd_arg):
+#         """"""
+#         while True:
+#             for fst, snd in self.most_general_unifier:
+#                 if isinstance(fst, tuple):
+#                     if isinstance(snd, str):
+#                         snd, fst = fst, snd
+#                         self.most_general_unifier.append((fst, snd))
+#                         break
 
-                if fst in variables(fst) | variables(snd):
-                    return False  # variable recursively defined
+#                     # snd is a function
+#                     fst_fun, fst_args = fst
+#                     snd_fun, snd_args = snd
+#                     if fst_fun != snd_fun:
+#                         return False
+#                     self.most_general_unifier.extend((arg_one, arg_two)
+#                                                      for arg_one, arg_two
+#                                                      in zip(fst_args, snd_args))
+#                     break
 
-                # TODO: substitute snd for fst in both sides of all other eqns
-            else:
-                return True
+#                 # fst is a str
+#                 if fst == snd:
+#                     self.most_general_unifier.remove((fst, snd))
+#                     break
 
-        # P(..., f(x, y) ...)
-        # ~ P(..., f(g(y), y) ...)
-        # {f(x, y) = f(g(y), y)}
-        # -> {x = g(y), y = y}
-        # -> {x = g(y)}
-        pass
+#                 if fst not in ({f for (left, right) in self.most_general_unifier for v in self.variables(left) | self.variables(right)})
+#                 continue  # nothing more to do with this variable
+
+#                 if fst in variables(fst) | variables(snd):
+#                     return False  # variable recursively defined
+
+#                 # TODO: substitute snd for fst in both sides of all other eqns
+#             else:
+#                 return True
+
+#         # P(..., f(x, y) ...)
+#         # ~ P(..., f(g(y), y) ...)
+#         # {f(x, y) = f(g(y), y)}
+#         # -> {x = g(y), y = y}
+#         # -> {x = g(y)}
+#         pass
 
 
 def resolve(left_clause, right_clause, variables):
     """Resolve the clauses, producing the resolvent clause."""
-    return Resolver(left_clause, right_clause, variables).resolve()
+    # return Resolver(left_clause, right_clause, variables).resolve()
 
 
-def resolve(clause_one, clause_two, variables):
-    """Resolve the clauses, producing the resolvent clause."""
-    substitutions = dict()
-    resolvent = set()
-    args_one
-    args_two
+def substitute(substitutions, term):
+    """Substitutes the given substitution dict into the term."""
+    if isinstance(term, str):
+        return substitutions.get(term, term)
 
-    def find_args(c1, c2):
-        nonlocal args_one
-        nonlocal args_two
+    fun, arguments = term
+    return fun, tuple(substitute(substitutions, arg) for arg in arguments)
 
-        for literal in c1:
-            if literal[0] == 'NOT':
-                predicate, args_one = literal[1]
-                args_two = next((l[1] for l in c2 if l[0] == predicate),
-                                None)
-            else:
-                predicate, args_one = literal
-                args_two = next((l[1] for l in c2
-                                 if l[0] == 'NOT' and l[1][0] == predicate),
-                                None)
 
-            if args_two is None:
-                resolvent.add(literal)
-                continue
-
-            # TODO: unify args, if unified remove both literals
-
-            # if f(x)/x, x/z is invalid
-            # Nothing can replace a constant
-
-            #P(x,x) , ~P(a,b)
-            # a/x
-            # b/x
-
-    find_args(clause_one, clause_two)
-    find_args(clause_two, clause_one)
-
-    if resolvent == clause_one | clause_two:
+def find_disagreement_set(first_term, second_term):
+    """Finds the disagreement set of the terms."""
+    # Term = str | str * Tuple[Term]
+    # 'x' |  ('f', ('x',)), ('a', ())
+    # P(a,y) | P(x,c)
+    #Terms = find_disagreement_term(('P', (('a', ()), 'y')), ('P', ('x', ('c', ()))))
+    if len(first_term) == 0 or len(second_term) == 0:
         return None
+    if len(first_term) != len(second_term):
+        return None
+    index = 0
+
+    # TODO:
+
+
+def unify(terms):
+    """Unifies the terms, producing the most general unifier or None."""
+    # TODO:
 
 
 def findIncSet(fSets):  # noqa

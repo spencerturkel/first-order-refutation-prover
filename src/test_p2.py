@@ -197,6 +197,20 @@ def test_str_to_cnf_universals(s, cnf, universals):
     assert p2.str_to_cnf_universals(s) == (cnf, universals)
 
 
+@pytest.mark.parametrize('substitutions, term, result', [
+    ({'x': 'a'}, ('P', ('a',)), ('P', ('a',))),
+    ({'x': 'a'}, ('P', ('x',)), ('P', ('a',))),
+    ({'x': ('a', ())}, ('P', ('x',)), ('P', (('a', ()),))),
+    ({'x': ('a', ())}, ('P', ('x',)), ('P', (('a', ()),))),
+    (
+        {'x': ('a', ()), 'y': ('g', ('b',)), 'z': ('f', (('g', ('b',)),))},
+        ('f', ('x', 'z', 'y')),
+        ('f', (('a', ()), ('f', (('g', ('b',)),)), ('g', ('b',))))),
+])
+def test_substitute(substitutions, term, result):
+    assert p2.substitute(substitutions, term) == result
+
+
 @pytest.mark.parametrize('clause_one, clause_two, variables, result', [
     (frozenset({
         ('P', ('x',)),
@@ -245,5 +259,6 @@ def test_str_to_cnf_universals(s, cnf, universals):
         frozenset({'x'}),
         None),
 ])
+@pytest.mark.skip
 def test_resolve(clause_one, clause_two, variables, result):
     assert p2.resolve(clause_one, clause_two, variables) == result
