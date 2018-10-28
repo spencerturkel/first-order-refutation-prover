@@ -471,9 +471,43 @@ def find_disagreement(first_term, second_term):
         return (first_term, second_term)
 
 
+def variable_in_term(variable, term):
+    term_stack = [term]
+    while term_stack:
+        term = term_stack.pop()
+        if isinstance(term, str):
+            if term == variable:
+                return True
+        else:
+            term_stack.extend(term[1])
+    return False
+
+
 def unify(term_one, term_two):
     """Unifies the terms, producing the most general unifier or None."""
-    # TODO:
+    substitutions = dict()
+
+    while True:
+        disagreement = find_disagreement(term_one, term_two)
+
+        if disagreement is False:
+            return None
+
+        if disagreement is True:
+            return substitutions
+
+        if isinstance(disagreement[0], str):
+            variable, term = disagreement
+        else:
+            term, variable = disagreement
+
+        if variable_in_term(variable, term):
+            return None
+
+        new_substitution = {variable: term}
+        substitutions.update(new_substitution)
+        term_one = substitute(new_substitution, term_one)
+        term_two = substitute(new_substitution, term_two)
 
 
 def findIncSet(fSets):  # noqa
