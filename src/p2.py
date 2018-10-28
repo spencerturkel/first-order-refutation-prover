@@ -355,6 +355,7 @@ class Resolver:
     def __init__(self, left_clause, right_clause, variables):
         self.left_clause = list(left_clause)
         self.right_clause = list(right_clause)
+        self.most_general_unifier = set()
 
     def resolve(self):
         while self.left_clause:
@@ -387,18 +388,47 @@ class Resolver:
                 for fst_arg, snd_arg in zip(args_one, args_two)):
             self.left_clause.remove(literal)
             self.right_clause.remove(match)
+            # TODO: substitute variables throughout resolvent
             return frozenset(self.left_clause + self.right_clause)
 
         return None
 
     def unify(self, fst_arg, snd_arg):
         """"""
-        substitutions = dict()
+        while True:
+            for fst, snd in self.most_general_unifier:
+                if isinstance(fst, tuple):
+                    if isinstance(snd, str):
+                        snd, fst = fst, snd
+                        self.most_general_unifier.append((fst, snd))
+                        break
 
-        if isinstance(fst_arg, str):
-            fst_arg = substitutions[fst_arg]
-        if isinstance(snd_arg, str):
-            snd_arg = substitutions[snd_arg]
+                    # snd is a function
+                    fst_fun, fst_args = fst
+                    snd_fun, snd_args = snd
+                    if fst_fun != snd_fun:
+                        return False
+                    self.most_general_unifier.extend((arg_one, arg_two)
+                                                     for arg_one, arg_two
+                                                     in zip(fst_args, snd_args))
+                    break
+
+                # fst is a str
+                if fst == snd:
+                    self.most_general_unifier.remove((fst, snd))
+                    break
+
+                if fst not in {f for (left, right) in self.most_general_unifier
+                               for v in self.variables(left)
+                               | self.variables(right)}
+                    continue  # nothing more to do with this variable
+
+                if fst in variables(fst) | variables(snd):
+                    return False  # variable recursively defined
+
+                # TODO: substitute snd for fst in both sides of all other eqns
+            else:
+                return True
 
         # P(..., f(x, y) ...)
         # ~ P(..., f(g(y), y) ...)
