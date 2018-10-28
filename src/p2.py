@@ -351,6 +351,68 @@ def str_to_cnf_universals(string):
     return to_cnf(formula), universals
 
 
+class Resolver:
+    def __init__(self, left_clause, right_clause, variables):
+        self.left_clause = list(left_clause)
+        self.right_clause = list(right_clause)
+
+    def resolve(self):
+        while self.left_clause:
+            literal = self.left_clause.pop()
+            resolvent = self.resolve_literal(literal):
+            if resolvent is not None:
+                return resolvent
+
+        return None
+
+    def resolve_literal(self, literal):
+        if literal[0] == 'NOT':
+            predicate, args_one = literal[1]
+            match = next((l for l in self.right_clause
+                          if l[0] == predicate),
+                         None)
+            if match is None:
+                return None
+            args_two = match[1]
+        else:
+            predicate, args_one = literal
+            match = next((l for l in self.right_clause
+                          if l[0] == 'NOT' and l[1][0] == predicate),
+                         None)
+            if match is None:
+                return None
+            args_two = match[1][1]
+
+        if all(self.unify(fst_arg, snd_arg)
+                for fst_arg, snd_arg in zip(args_one, args_two)):
+            self.left_clause.remove(literal)
+            self.right_clause.remove(match)
+            return frozenset(self.left_clause + self.right_clause)
+
+        return None
+
+    def unify(self, fst_arg, snd_arg):
+        """"""
+        substitutions = dict()
+
+        if isinstance(fst_arg, str):
+            fst_arg = substitutions[fst_arg]
+        if isinstance(snd_arg, str):
+            snd_arg = substitutions[snd_arg]
+
+        # P(..., f(x, y) ...)
+        # ~ P(..., f(g(y), y) ...)
+        # {f(x, y) = f(g(y), y)}
+        # -> {x = g(y), y = y}
+        # -> {x = g(y)}
+        pass
+
+
+def resolve(left_clause, right_clause, variables):
+    """Resolve the clauses, producing the resolvent clause."""
+    return Resolver(left_clause, right_clause, variables).resolve()
+
+
 def resolve(clause_one, clause_two, variables):
     """Resolve the clauses, producing the resolvent clause."""
     substitutions = dict()
@@ -383,8 +445,8 @@ def resolve(clause_one, clause_two, variables):
             # Nothing can replace a constant
 
             #P(x,x) , ~P(a,b)
+            # a/x
             # b/x
-            # P(b,b)
 
     find_args(clause_one, clause_two)
     find_args(clause_two, clause_one)
