@@ -108,22 +108,20 @@ def test_skolemize(formula, skolemized):
     assert p2.skolemize(formula) == skolemized
 
 
-@pytest.mark.parametrize('fol, zol, universals', [
+@pytest.mark.parametrize('fol, zol', [
     (('OR', ('AND', ('NOT', ('p', ())), ('NOT', ('q', ()))), ('NOT', ('z', ()))),
-     ('OR', ('AND', ('NOT', ('p', ())), ('NOT', ('q', ()))), ('NOT', ('z', ()))),
-     set()),
-    (('FORALL', 'y', ('NOT', ('p', ()))), ('NOT', ('p', ())), {'y'}),
-    (('OR', ('p', ()), ('q', ())), ('OR', ('p', ()), ('q', ())), set()),
+     ('OR', ('AND', ('NOT', ('p', ())), ('NOT', ('q', ()))), ('NOT', ('z', ())))),
+    (('FORALL', 'y', ('NOT', ('p', ()))), ('NOT', ('p', ()))),
+    (('OR', ('p', ()), ('q', ())), ('OR', ('p', ()), ('q', ()))),
     (('FORALL', 'x',
       ('FORALL', '-2', ('AND', ('p', (('-1', ('x',)),)), ('q', ())))),
-        ('AND', ('p', (('-1', ('x',)),)), ('q', ())), {'x', '-2'}),
+        ('AND', ('p', (('-1', ('x',)),)), ('q', ()))),
     (('FORALL', 'x',
       ('FORALL', '-1', ('AND', ('p', ('-1',)), ('q', (('-2', ('x', '-1')),))))),
-     ('AND', ('p', ('-1',)), ('q', (('-2', ('x', '-1')),))),
-        {'x', '-1'}),
+     ('AND', ('p', ('-1',)), ('q', (('-2', ('x', '-1')),)))),
 ])
-def test_drop_universals(fol, zol, universals):
-    assert p2.drop_universals(fol) == (zol, universals)
+def test_drop_universals(fol, zol):
+    assert p2.drop_universals(fol) == zol
 
 
 @pytest.mark.parametrize('zol, cnf', [
@@ -146,43 +144,36 @@ def test_to_cnf(zol, cnf):
     assert p2.to_cnf(zol) == cnf
 
 
-@pytest.mark.parametrize('s, cnf, universals', [
+@pytest.mark.parametrize('s, cnf', [
     ('(NOT (AND (OR (p) (EXISTS q (r))) z))',
      frozenset((frozenset((('NOT', ('p', ())), ('NOT', 'z'))),
-                frozenset((('NOT', ('r', ())), ('NOT', 'z'))))),
-     frozenset(('q',))),
+                frozenset((('NOT', ('r', ())), ('NOT', 'z')))))),
     ('(OR (FORALL x (AND (p x) (NOT (q)))) (EXISTS y (AND (p y) (q))))',
         frozenset((
             frozenset((('p', ('x',)), ('p', (('y', ('x',)),)))),
             frozenset((('p', ('x',)), ('q', ()))),
             frozenset((('NOT', ('q', ())), ('p', (('y', ('x',)),)))),
-            frozenset((('NOT', ('q', ())), ('q', ()))))),
-     frozenset(('x',))),
+            frozenset((('NOT', ('q', ())), ('q', ())))))),
     ('(FORALL x (IMPLIES (P x) (Q x)))',
-     frozenset({frozenset({('NOT', ('P', ('x',))), ('Q', ('x',))})}),
-     frozenset({'x'})),
+     frozenset({frozenset({('NOT', ('P', ('x',))), ('Q', ('x',))})})),
     ('(P (f a))',
-     frozenset({frozenset({('P', (('f', ('a',)),))})}), frozenset()),
+     frozenset({frozenset({('P', (('f', ('a',)),))})})),
     ('(NOT (Q (f a)))',
-     frozenset({frozenset({('NOT', ('Q', (('f', ('a',)),)))})}), frozenset()),
+     frozenset({frozenset({('NOT', ('Q', (('f', ('a',)),)))})})),
     ('(FORALL x (P x))',
-     frozenset({frozenset({('P', ('x',))})}), frozenset({'x'})),
+     frozenset({frozenset({('P', ('x',))})})),
     ('(NOT (FORALL x (Q x)))',
-     frozenset({frozenset({('NOT', ('Q', (('x', ()),)))})}), frozenset()),
+     frozenset({frozenset({('NOT', ('Q', (('x', ()),)))})})),
     ('(EXISTS x (AND (P x) (Q b)))',
-     frozenset({frozenset({('Q', ('b',))}), frozenset({('P', (('x', ()),))})}),
-     frozenset()),
+     frozenset({frozenset({('Q', ('b',))}), frozenset({('P', (('x', ()),))})})),
     ('(NOT (NOT (P a)))',
-     frozenset({frozenset({('P', ('a',))})}),
-     frozenset()),
+     frozenset({frozenset({('P', ('a',))})})),
     ('(big_f (f a b) (f b c))',
-     frozenset({frozenset({('big_f', (('f', ('a', 'b')), ('f', ('b', 'c'))))})}),
-     frozenset()),
+     frozenset({frozenset({('big_f', (('f', ('a', 'b')), ('f', ('b', 'c'))))})})),
     ('(NOT (big_f (f a b) (f b c)))',
      frozenset({frozenset({
          ('NOT', ('big_f', (('f', ('a', 'b')), ('f', ('b', 'c')))))
-     })}),
-     frozenset()),
+     })})),
     ('''(FORALL X (FORALL Y (FORALL Z
             (IMPLIES (AND (big_f X Y) (big_f Y Z)) (big_f X Z))
         )))''',
@@ -190,11 +181,10 @@ def test_to_cnf(zol, cnf):
          ('NOT', ('big_f', ('X', 'Y'))),
          ('NOT', ('big_f', ('Y', 'Z'))),
          ('big_f', ('X', 'Z')),
-     })}),
-     frozenset({'X', 'Y', 'Z'})),
+     })})),
 ])
-def test_str_to_cnf_universals(s, cnf, universals):
-    assert p2.str_to_cnf_universals(s) == (cnf, universals)
+def test_str_to_cnf(s, cnf):
+    assert p2.str_to_cnf(s) == cnf
 
 
 @pytest.mark.parametrize('substitutions, term, result', [
@@ -350,6 +340,28 @@ def test_unify(first_term, second_term, result):
 def test_resolve(clause_one, clause_two, result):
     assert p2.resolve(clause_one, clause_two) == result
 
+
+@pytest.mark.parametrize('setOfClauses', [
+    frozenset({
+        frozenset({
+            ('P', ('x',)),
+            ('NOT', ('Q', ('x',)))
+        }),
+        frozenset({
+            ('Q', (('a', ()),))
+        }),
+        frozenset({
+            ('NOT', ('P', (('a', ()),)))
+        }),
+        frozenset({
+            ('Q', (('b', ()),))
+        })
+    }),
+])
+@pytest.mark.timeout(10, method='signal')
+@pytest.mark.skip
+def test_find_contradiction_within_time(setOfClauses):
+    p2.find_contradiction(setOfClauses)
 
 #                 __  __    ______  _____   ____     __    __
 #                /\ \/\ \  /\  _  \/\  _ `\/\  _`\  /\ \  /\ \
