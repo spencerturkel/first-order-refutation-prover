@@ -267,7 +267,7 @@ def test_unify(first_term, second_term, result):
     assert p2.unify(first_term, second_term) == result
 
 
-@pytest.mark.parametrize('clause_one, clause_two, variables, result', [
+@pytest.mark.parametrize('clause_one, clause_two, result', [
     (frozenset({
         ('P', ('x',)),
         ('NOT', ('Q', ('x',))),
@@ -275,7 +275,26 @@ def test_unify(first_term, second_term, result):
         frozenset({
             ('Q', (('a', ()),))
         }),
-        frozenset({'x', }),
+        frozenset({
+            ('P', (('a', ()),))
+        })),
+    (frozenset({
+        ('P', ('x',)),
+        ('Q', (('a', ()),))
+    }),
+        frozenset({
+            ('NOT', ('Q', ('x',))),
+        }),
+        frozenset({
+            ('P', (('a', ()),))
+        })),
+    (frozenset({
+        ('Q', (('a', ()),))
+    }),
+        frozenset({
+            ('NOT', ('Q', ('x',))),
+            ('P', ('x',)),
+        }),
         frozenset({
             ('P', (('a', ()),))
         })),
@@ -286,7 +305,6 @@ def test_unify(first_term, second_term, result):
         frozenset({
             ('Q', (('b', ()),))
         }),
-        frozenset({'x', }),
         frozenset({
             ('P', (('b', ()),))
         })),
@@ -296,7 +314,6 @@ def test_unify(first_term, second_term, result):
         frozenset({
             ('NOT', ('P', (('a', ()),))),
         }),
-        frozenset({'x', }),
         frozenset()),
     (frozenset({
         ('P', (('a', ()),)),
@@ -304,20 +321,34 @@ def test_unify(first_term, second_term, result):
         frozenset({
             ('NOT', ('P', (('b', ()),))),
         }),
-        frozenset({'x'}),
         None),
+    (frozenset({
+        ('P', (('a', ()),)),
+    }),
+        frozenset({
+            ('NOT', ('P', (('a', ()),))),
+            ('NOT', ('P', (('b', ()),))),
+        }),
+        frozenset({
+            ('NOT', ('P', (('b', ()),))),
+        })),
     (frozenset({
         ('P', (('a', ()),)),
     }),
         frozenset({
             ('NOT', ('Q', (('a', ()),))),
         }),
-        frozenset({'x'}),
+        None),
+    (frozenset({
+        ('P', (('a', ()),)),
+    }),
+        frozenset({
+            ('Q', (('a', ()),)),
+        }),
         None),
 ])
-@pytest.mark.skip
-def test_resolve(clause_one, clause_two, variables, result):
-    assert p2.resolve(clause_one, clause_two, variables) == result
+def test_resolve(clause_one, clause_two, result):
+    assert p2.resolve(clause_one, clause_two) == result
 
 
 #                 __  __    ______  _____   ____     __    __

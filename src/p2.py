@@ -1,6 +1,24 @@
 """Main file that will be executed by the grader."""
 
+#                 __  __    ______  _____   ____     __    __
+#                /\ \/\ \  /\  _  \/\  _ `\/\  _`\  /\ \  /\ \
+#                \ \ \_\ \ \ \ \L\ \ \ \L\ \ \ \L\ \\ `\`\\/'/
+#                 \ \  _  \ \ \  __ \ \ ,__/\ \ ,__/ `\ `\ /'
+#                  \ \ \ \ \ \ \ \/\ \ \ \/  \ \ \/    `\ \ \
+#                   \ \_\ \_\ \ \_\ \_\ \_\   \ \_\      \ \_\
+#                    \/_/\/_/  \/_/\/_/\/_/    \/_/       \/_/
+
+
+#  __  __  ______  __      __      _____   __      __  _____  _____  __  __
+# /\ \/\ \/\  _  \/\ \    /\ \    /\  __`\/\ \  __/\ \/\  __\/\  __\/\ \/\ \
+# \ \ \_\ \ \ \L\ \ \ \   \ \ \   \ \ \/\ \ \ \/\ \ \ \ \ \_/_ \ \_/_ \ `\\ \
+#  \ \  _  \ \  __ \ \ \  _\ \ \  _\ \ \ \ \ \ \ \ \ \ \ \  __\ \  __\ \ , ` \
+#   \ \ \ \ \ \ \/\ \ \ \_\ \ \ \_\ \ \ \_\ \ \ \_/ \_\ \ \ \/__ \ \/__ \ \`\ \
+#    \ \_\ \_\ \_\ \_\ \____/\ \____/\ \_____\ `\___x___/\ \____\ \____\ \_\ \_\
+#     \/_/\/_/\/_/\/_/\/___/  \/___/  \/_____/'\/__//__/  \/____/\/____/\/_/\/_/
+
 import string
+from itertools import chain
 
 
 def lex(formula):
@@ -351,96 +369,6 @@ def str_to_cnf_universals(string):
     return to_cnf(formula), universals
 
 
-# class Resolver:
-#     def __init__(self, left_clause, right_clause, variables):
-#         self.left_clause = list(left_clause)
-#         self.right_clause = list(right_clause)
-#         self.most_general_unifier
-
-#     def resolve(self):
-#         self.most_general_unifier = set()
-
-#         while self.left_clause:
-#             literal = self.left_clause.pop()
-#             resolvent = self.resolve_literal(literal)
-#             if resolvent is not None:
-#                 return resolvent
-
-#         return None
-
-#     def resolve_literal(self, literal):
-#         if literal[0] == 'NOT':
-#             literal = literal[1]
-#             match = next((l for l in self.right_clause
-#                           if l[0] == literal[0]),
-#                          None)
-#         else:
-#             match = next((l[1] for l in self.right_clause
-#                           if l[0] == 'NOT' and l[1][0] == literal[0]),
-#                          None)
-
-#         if match is None:
-#             return None
-
-#         self.unify(literal, match)
-
-#         if all(self.unify(fst_arg, snd_arg)
-#                 for fst_arg, snd_arg in zip(args_one, args_two)):
-#             self.left_clause.remove(literal)
-#             self.right_clause.remove(match)
-#             # TODO: substitute variables throughout resolvent
-#             return frozenset(self.left_clause + self.right_clause)
-
-#         return None
-
-#     def unify(self, fst_arg, snd_arg):
-#         """"""
-#         while True:
-#             for fst, snd in self.most_general_unifier:
-#                 if isinstance(fst, tuple):
-#                     if isinstance(snd, str):
-#                         snd, fst = fst, snd
-#                         self.most_general_unifier.append((fst, snd))
-#                         break
-
-#                     # snd is a function
-#                     fst_fun, fst_args = fst
-#                     snd_fun, snd_args = snd
-#                     if fst_fun != snd_fun:
-#                         return False
-#                     self.most_general_unifier.extend((arg_one, arg_two)
-#                                                      for arg_one, arg_two
-#                                                      in zip(fst_args, snd_args))
-#                     break
-
-#                 # fst is a str
-#                 if fst == snd:
-#                     self.most_general_unifier.remove((fst, snd))
-#                     break
-
-#                 if fst not in ({f for (left, right) in self.most_general_unifier for v in self.variables(left) | self.variables(right)})
-#                 continue  # nothing more to do with this variable
-
-#                 if fst in variables(fst) | variables(snd):
-#                     return False  # variable recursively defined
-
-#                 # TODO: substitute snd for fst in both sides of all other eqns
-#             else:
-#                 return True
-
-#         # P(..., f(x, y) ...)
-#         # ~ P(..., f(g(y), y) ...)
-#         # {f(x, y) = f(g(y), y)}
-#         # -> {x = g(y), y = y}
-#         # -> {x = g(y)}
-#         pass
-
-
-def resolve(left_clause, right_clause, variables):
-    """Resolve the clauses, producing the resolvent clause."""
-    # return Resolver(left_clause, right_clause, variables).resolve()
-
-
 def substitute(substitutions, term):
     """Substitutes the given substitution dict into the term."""
     if isinstance(term, str):
@@ -508,6 +436,99 @@ def unify(term_one, term_two):
         substitutions.update(new_substitution)
         term_one = substitute(new_substitution, term_one)
         term_two = substitute(new_substitution, term_two)
+
+
+def resolve(left_clause, right_clause):
+    """Resolve the clauses, producing the resolvent clause or None."""
+    for literal in left_clause:
+        if literal[0] == 'NOT':
+            literal = literal[1]
+            predicate, first_arg_list = literal
+            match = next((l for l in right_clause if l[0] == predicate), None)
+            if match is None:
+                continue
+
+            unifier = unify(literal, match)
+
+            if unifier is None:
+                continue
+
+            result = frozenset(
+                (('NOT', substitute(unifier, lit[1]))
+                 if lit[0] == 'NOT'
+                 else substitute(unifier, lit))
+                for lit in chain(left_clause, right_clause)
+                if lit != ('NOT', literal) and lit != match
+            )
+
+            return result
+        else:
+            predicate, first_arg_list = literal
+            match = next((l[1] for l in right_clause
+                          if l[0] == 'NOT' and l[1][0] == predicate), None)
+            if match is None:
+                continue
+
+            unifier = unify(literal, match)
+
+            if unifier is None:
+                continue
+
+            result = frozenset(
+                (('NOT', substitute(unifier, lit[1]))
+                 if lit[0] == 'NOT'
+                 else substitute(unifier, lit))
+                for lit in chain(left_clause, right_clause)
+                if lit != literal and lit != ('NOT', match)
+            )
+
+            return result
+    for literal in right_clause:
+        if literal[0] == 'NOT':
+            literal = literal[1]
+            predicate, first_arg_list = literal
+            match = next(
+                (l for l in left_clause if l[0] == predicate), None)
+            if match is None:
+                continue
+
+            unifier = unify(literal, match)
+
+            if unifier is None:
+                continue
+
+            result = frozenset(
+                (('NOT', substitute(unifier, lit[1]))
+                 if lit[0] == 'NOT'
+                 else substitute(unifier, lit))
+                for lit in chain(left_clause, right_clause)
+                if lit != ('NOT', literal) and lit != match
+            )
+
+            return result
+        else:
+            predicate, first_arg_list = literal
+            match = next((l for l in left_clause
+                          if l[0] == 'NOT' and l[1][0] == predicate), None)
+            if match is None:
+                continue
+
+            unifier = unify(literal, match)
+
+            if unifier is None:
+                continue
+
+            result = frozenset(
+                (('NOT', substitute(unifier, lit[1]))
+                 if lit[0] == 'NOT'
+                 else substitute(unifier, lit))
+                for lit in chain(left_clause, right_clause)
+                if lit != literal and lit != ('NOT', match)
+            )
+
+            return result
+
+    return None
 
 
 def findIncSet(fSets):  # noqa
