@@ -210,6 +210,63 @@ def test_str_to_cnf_universals(s, cnf, universals):
 def test_substitute(substitutions, term, result):
     assert p2.substitute(substitutions, term) == result
 
+# Terms = find_disagreement_term(('P', (('a', ()), 'y')), ('P', ['x', {'c', ()}]))
+# Term = str | str * Tuple[Term]
+# 'x'
+# ('x', ())
+# ('f', ('x',))
+# ('f', ('x', 'y'))
+# ('f', (('a', ()), 'y'))
+# ('f', (('a', ('x',)), 'y'))
+# ('f', (('a', (('b', ()),)), 'y')) = f(a(b()), y) (by the way, y is a var) = FUNCTION f (FUNCTION a (FUNCTION b ()), VARIABLE y)
+
+
+@pytest.mark.parametrize('first_term, second_term, result', [
+    ('P', 'Q', ('P', 'Q')),
+    (('f', ('x',)), 'x', (('f', ('x',)), 'x')),
+    (('f', ('c', ('b', ()))), 'x', (('f', ('c', ('b', ()))), 'x')),
+    (('f', ('x',)), ('f', ('y',)), ('x', 'y')),
+    (('g', ('x',)), ('f', ('y',)), False),
+    (('b', ()), ('c', ()), False),
+    (('b', ()), ('b', ()), True),
+])
+def test_find_disagreement(first_term, second_term, result):
+    assert p2.find_disagreement(first_term, second_term) == result
+
+
+@pytest.mark.parametrize('first_term, second_term, result', [
+    ('x', 'y', ('y', {'y': 'x'})),
+    ('x', ('a', ()), None),
+    (
+        ('f', ('x',)),
+        ('f', (('a', ()),)),
+        (('f', ('a', ())), {'x': ('a', ())})
+    ),
+    (
+        ('P', (('a', ()), 'y')),
+        ('P', ('x', ('f', (('b', ()),)))),
+        (
+            ('P', (('a', ()), ('f', (('b', ()),)))),
+            {'x': ('a', ()), 'y': ('f', (('b', ()),))}),
+    ),
+    (
+        ('Q', (('f', (('a', ()))), ('g', ('x',)))),
+        ('Q', ('y', 'y')),
+        None,
+    ),
+    (
+        ('P', (('a', ()), 'x', ('f', (('g', ('y',)),)))),
+        ('P', ('z', ('f', ('z',)), ('f', ('u',)))),
+        (
+            ('P', (('a', ()), ('f', (('a', ()),)), ('f', ('u',)))),
+            {'z': ('a', ()), 'x': ('f', (('a', ()))), 'u': ('g', ('y',))}
+        ),
+    ),
+])
+@pytest.mark.skip
+def test_unify(first_term, second_term, result):
+    assert p2.unify(first_term, second_term) == result
+
 
 @pytest.mark.parametrize('clause_one, clause_two, variables, result', [
     (frozenset({
@@ -262,3 +319,21 @@ def test_substitute(substitutions, term, result):
 @pytest.mark.skip
 def test_resolve(clause_one, clause_two, variables, result):
     assert p2.resolve(clause_one, clause_two, variables) == result
+
+
+#                 __  __    ______  _____   ____     __    __
+#                /\ \/\ \  /\  _  \/\  _ `\/\  _`\  /\ \  /\ \
+#                \ \ \_\ \ \ \ \L\ \ \ \L\ \ \ \L\ \\ `\`\\/'/
+#                 \ \  _  \ \ \  __ \ \ ,__/\ \ ,__/ `\ `\ /'
+#                  \ \ \ \ \ \ \ \/\ \ \ \/  \ \ \/    `\ \ \
+#                   \ \_\ \_\ \ \_\ \_\ \_\   \ \_\      \ \_\
+#                    \/_/\/_/  \/_/\/_/\/_/    \/_/       \/_/
+
+
+#  __  __  ______  __      __      _____   __      __  _____  _____  __  __
+# /\ \/\ \/\  _  \/\ \    /\ \    /\  __`\/\ \  __/\ \/\  __\/\  __\/\ \/\ \
+# \ \ \_\ \ \ \L\ \ \ \   \ \ \   \ \ \/\ \ \ \/\ \ \ \ \ \_/_ \ \_/_ \ `\\ \
+#  \ \  _  \ \  __ \ \ \  _\ \ \  _\ \ \ \ \ \ \ \ \ \ \ \  __\ \  __\ \ , ` \
+#   \ \ \ \ \ \ \/\ \ \ \_\ \ \ \_\ \ \ \_\ \ \ \_/ \_\ \ \ \/__ \ \/__ \ \`\ \
+#    \ \_\ \_\ \_\ \_\ \____/\ \____/\ \_____\ `\___x___/\ \____\ \____\ \_\ \_\
+#     \/_/\/_/\/_/\/_/\/___/  \/___/  \/_____/'\/__//__/  \/____/\/____/\/_/\/_/

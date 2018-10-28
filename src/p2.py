@@ -450,22 +450,28 @@ def substitute(substitutions, term):
     return fun, tuple(substitute(substitutions, arg) for arg in arguments)
 
 
-def find_disagreement_set(first_term, second_term):
+def find_disagreement(first_term, second_term):
     """Finds the disagreement set of the terms."""
-    # Term = str | str * Tuple[Term]
-    # 'x' |  ('f', ('x',)), ('a', ())
-    # P(a,y) | P(x,c)
-    #Terms = find_disagreement_term(('P', (('a', ()), 'y')), ('P', ('x', ('c', ()))))
-    if len(first_term) == 0 or len(second_term) == 0:
-        return None
-    if len(first_term) != len(second_term):
-        return None
-    index = 0
+    # TODO: make this iterative rather than recursive
+    if isinstance(first_term, tuple) and isinstance(second_term, tuple):
+        if first_term[0] == second_term[0]:
+            for a1, a2 in zip(first_term[1], second_term[1]):
+                sub_result = find_disagreement(a1, a2)
+                if sub_result is False:
+                    return False
+                if sub_result is True:
+                    continue
+                return sub_result
+            return True
+        else:
+            return False
+    elif first_term == second_term:
+        return True
+    else:
+        return (first_term, second_term)
 
-    # TODO:
 
-
-def unify(terms):
+def unify(term_one, term_two):
     """Unifies the terms, producing the most general unifier or None."""
     # TODO:
 
