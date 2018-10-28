@@ -53,7 +53,7 @@ def test_normalization(formula, normalized):
      ('OR', ('AND', ('NOT', ('p', ())), ('NOT', ('q', ()))), ('NOT', ('z', ())))),
     (('EXISTS', 'x', ('FORALL', 'y', ('NOT', ('p', ())))),
      ('EXISTS', 'x', ('FORALL', 'y', ('NOT', ('p', ()))))),
-    (('EXISTS', 'x', ('FORALL', 'x', ('p', ('x', ('f', ['y', 'x']))))),
+    (('EXISTS', 'x', ('FORALL', 'x', ('p', ('x', ('f', ('y', 'x')))))),
      ('EXISTS', 'x', ('FORALL', '-1', ('p', ('-1', ('f', ('y', '-1'))))))),
     (('OR', ('EXISTS', 'x', ('p', ())), ('EXISTS', 'x', ('q', ()))),
         ('OR', ('EXISTS', 'x', ('p', ())), ('EXISTS', '-1', ('q', ())))),
@@ -151,11 +151,6 @@ def test_to_cnf(zol, cnf):
      frozenset((frozenset((('NOT', ('p', ())), ('NOT', 'z'))),
                 frozenset((('NOT', ('r', ())), ('NOT', 'z'))))),
      frozenset(('q',))),
-    (' (  NOT p ) ',
-     frozenset((frozenset((('NOT', 'p'),)),)),
-     frozenset()),
-    ('(OR p q)',
-     frozenset((frozenset(('p', 'q')),)), frozenset()),
     ('(OR (FORALL x (AND (p x) (NOT (q)))) (EXISTS y (AND (p y) (q))))',
         frozenset((
             frozenset((('p', ('x',)), ('p', (('y', ('x',)),)))),
@@ -163,6 +158,212 @@ def test_to_cnf(zol, cnf):
             frozenset((('NOT', ('q', ())), ('p', (('y', ('x',)),)))),
             frozenset((('NOT', ('q', ())), ('q', ()))))),
      frozenset(('x',))),
+    ('(FORALL x (IMPLIES (P x) (Q x)))',
+     frozenset({frozenset({('NOT', ('P', ('x',))), ('Q', ('x',))})}),
+     frozenset({'x'})),
+    ('(P (f a))',
+     frozenset({frozenset({('P', (('f', ('a',)),))})}), frozenset()),
+    ('(NOT (Q (f a)))',
+     frozenset({frozenset({('NOT', ('Q', (('f', ('a',)),)))})}), frozenset()),
+    ('(FORALL x (P x))',
+     frozenset({frozenset({('P', ('x',))})}), frozenset({'x'})),
+    ('(NOT (FORALL x (Q x)))',
+     frozenset({frozenset({('NOT', ('Q', (('x', ()),)))})}), frozenset()),
+    ('(EXISTS x (AND (P x) (Q b)))',
+     frozenset({frozenset({('Q', ('b',))}), frozenset({('P', (('x', ()),))})}),
+     frozenset()),
+    ('(NOT (NOT (P a)))',
+     frozenset({frozenset({('P', ('a',))})}),
+     frozenset()),
+    ('(big_f (f a b) (f b c))',
+     frozenset({frozenset({('big_f', (('f', ('a', 'b')), ('f', ('b', 'c'))))})}),
+     frozenset()),
+    ('(NOT (big_f (f a b) (f b c)))',
+     frozenset({frozenset({
+         ('NOT', ('big_f', (('f', ('a', 'b')), ('f', ('b', 'c')))))
+     })}),
+     frozenset()),
+    ('''(FORALL X (FORALL Y (FORALL Z
+            (IMPLIES (AND (big_f X Y) (big_f Y Z)) (big_f X Z))
+        )))''',
+     frozenset({frozenset({
+         ('NOT', ('big_f', ('X', 'Y'))),
+         ('NOT', ('big_f', ('Y', 'Z'))),
+         ('big_f', ('X', 'Z')),
+     })}),
+     frozenset({'X', 'Y', 'Z'})),
 ])
 def test_str_to_cnf_universals(s, cnf, universals):
     assert p2.str_to_cnf_universals(s) == (cnf, universals)
+
+
+@pytest.mark.parametrize('substitutions, term, result', [
+    ({'x': 'a'}, ('P', ('a',)), ('P', ('a',))),
+    ({'x': 'a'}, ('P', ('x',)), ('P', ('a',))),
+    ({'x': ('a', ())}, ('P', ('x',)), ('P', (('a', ()),))),
+    ({'x': ('a', ())}, ('P', ('x',)), ('P', (('a', ()),))),
+    (
+        {'x': ('a', ()), 'y': ('g', ('b',)), 'z': ('f', (('g', ('b',)),))},
+        ('f', ('x', 'z', 'y')),
+        ('f', (('a', ()), ('f', (('g', ('b',)),)), ('g', ('b',))))),
+])
+def test_substitute(substitutions, term, result):
+    assert p2.substitute(substitutions, term) == result
+
+# Terms = find_disagreement_term(('P', (('a', ()), 'y')), ('P', ['x', {'c', ()}]))
+# Term = str | str * Tuple[Term]
+# 'x'
+# ('x', ())
+# ('f', ('x',))
+# ('f', ('x', 'y'))
+# ('f', (('a', ()), 'y'))
+# ('f', (('a', ('x',)), 'y'))
+# ('f', (('a', (('b', ()),)), 'y')) = f(a(b()), y) (by the way, y is a var) = FUNCTION f (FUNCTION a (FUNCTION b ()), VARIABLE y)
+
+
+@pytest.mark.parametrize('first_term, second_term, result', [
+    ('P', 'Q', ('P', 'Q')),
+    (('f', ('x',)), 'x', (('f', ('x',)), 'x')),
+    (('f', ('c', ('b', ()))), 'x', (('f', ('c', ('b', ()))), 'x')),
+    (('f', ('x',)), ('f', ('y',)), ('x', 'y')),
+    (('g', ('x',)), ('f', ('y',)), False),
+    (('b', ()), ('c', ()), False),
+    (('b', ()), ('b', ()), True),
+])
+def test_find_disagreement(first_term, second_term, result):
+    assert p2.find_disagreement(first_term, second_term) == result
+
+
+@pytest.mark.parametrize('first_term, second_term, result', [
+    ('x', 'y', {'x': 'y'}),
+    (('a', ()), ('b', ()), None),
+    (('a', ()), ('a', ()), dict()),
+    ('x', ('a', ()), {'x': ('a', ())}),
+    (
+        ('f', ('x',)),
+        ('f', (('a', ()),)),
+        {'x': ('a', ())}
+    ),
+    (
+        ('P', (('a', ()), 'y')),
+        ('P', ('x', ('f', (('b', ()),)))),
+        {'x': ('a', ()), 'y': ('f', (('b', ()),))},
+    ),
+    (
+        ('Q', (('f', (('a', ()),)), ('g', ('x',)))),
+        ('Q', ('y', 'y')),
+        None,
+    ),
+    (
+        ('P', (('a', ()), 'x', ('f', (('g', ('y',)),)))),
+        ('P', ('z', ('f', ('z',)), ('f', ('u',)))),
+        {'z': ('a', ()), 'x': ('f', (('a', ()),)), 'u': ('g', ('y',))},
+    ),
+    (
+        'x', ('f', ('x',)), None
+    )
+])
+def test_unify(first_term, second_term, result):
+    assert p2.unify(first_term, second_term) == result
+
+
+@pytest.mark.parametrize('clause_one, clause_two, result', [
+    (frozenset({
+        ('P', ('x',)),
+        ('NOT', ('Q', ('x',))),
+    }),
+        frozenset({
+            ('Q', (('a', ()),))
+        }),
+        frozenset({
+            ('P', (('a', ()),))
+        })),
+    (frozenset({
+        ('P', ('x',)),
+        ('Q', (('a', ()),))
+    }),
+        frozenset({
+            ('NOT', ('Q', ('x',))),
+        }),
+        frozenset({
+            ('P', (('a', ()),))
+        })),
+    (frozenset({
+        ('Q', (('a', ()),))
+    }),
+        frozenset({
+            ('NOT', ('Q', ('x',))),
+            ('P', ('x',)),
+        }),
+        frozenset({
+            ('P', (('a', ()),))
+        })),
+    (frozenset({
+        ('P', ('x',)),
+        ('NOT', ('Q', ('x',))),
+    }),
+        frozenset({
+            ('Q', (('b', ()),))
+        }),
+        frozenset({
+            ('P', (('b', ()),))
+        })),
+    (frozenset({
+        ('P', (('a', ()),)),
+    }),
+        frozenset({
+            ('NOT', ('P', (('a', ()),))),
+        }),
+        frozenset()),
+    (frozenset({
+        ('P', (('a', ()),)),
+    }),
+        frozenset({
+            ('NOT', ('P', (('b', ()),))),
+        }),
+        None),
+    (frozenset({
+        ('P', (('a', ()),)),
+    }),
+        frozenset({
+            ('NOT', ('P', (('a', ()),))),
+            ('NOT', ('P', (('b', ()),))),
+        }),
+        frozenset({
+            ('NOT', ('P', (('b', ()),))),
+        })),
+    (frozenset({
+        ('P', (('a', ()),)),
+    }),
+        frozenset({
+            ('NOT', ('Q', (('a', ()),))),
+        }),
+        None),
+    (frozenset({
+        ('P', (('a', ()),)),
+    }),
+        frozenset({
+            ('Q', (('a', ()),)),
+        }),
+        None),
+])
+def test_resolve(clause_one, clause_two, result):
+    assert p2.resolve(clause_one, clause_two) == result
+
+
+#                 __  __    ______  _____   ____     __    __
+#                /\ \/\ \  /\  _  \/\  _ `\/\  _`\  /\ \  /\ \
+#                \ \ \_\ \ \ \ \L\ \ \ \L\ \ \ \L\ \\ `\`\\/'/
+#                 \ \  _  \ \ \  __ \ \ ,__/\ \ ,__/ `\ `\ /'
+#                  \ \ \ \ \ \ \ \/\ \ \ \/  \ \ \/    `\ \ \
+#                   \ \_\ \_\ \ \_\ \_\ \_\   \ \_\      \ \_\
+#                    \/_/\/_/  \/_/\/_/\/_/    \/_/       \/_/
+
+
+#  __  __  ______  __      __      _____   __      __  _____  _____  __  __
+# /\ \/\ \/\  _  \/\ \    /\ \    /\  __`\/\ \  __/\ \/\  __\/\  __\/\ \/\ \
+# \ \ \_\ \ \ \L\ \ \ \   \ \ \   \ \ \/\ \ \ \/\ \ \ \ \ \_/_ \ \_/_ \ `\\ \
+#  \ \  _  \ \  __ \ \ \  _\ \ \  _\ \ \ \ \ \ \ \ \ \ \ \  __\ \  __\ \ , ` \
+#   \ \ \ \ \ \ \/\ \ \ \_\ \ \ \_\ \ \ \_\ \ \ \_/ \_\ \ \ \/__ \ \/__ \ \`\ \
+#    \ \_\ \_\ \_\ \_\ \____/\ \____/\ \_____\ `\___x___/\ \____\ \____\ \_\ \_\
+#     \/_/\/_/\/_/\/_/\/___/  \/___/  \/_____/'\/__//__/  \/____/\/____/\/_/\/_/
