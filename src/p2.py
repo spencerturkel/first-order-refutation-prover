@@ -56,7 +56,7 @@ def lex(formula):
             if formula[index + 1: (index + length)] != 'OT':
                 return
             index += length
-            yield token
+            yield token:
         elif char in string.whitespace:
             while True:
                 index += 1
@@ -323,7 +323,7 @@ def drop_universals(formula):
 
 
 def to_cnf(formula):
-    """Generate an equivalent CNF formula from a ZOL formula."""
+    # """Generate an equivalent CNF formula from a ZOL formula."""
     tag, *args = formula
 
     if tag == 'AND':
@@ -333,7 +333,6 @@ def to_cnf(formula):
         return frozenset(fst | snd
                          for fst in to_cnf(args[0])
                          for snd in to_cnf(args[1]))
-
     return frozenset((frozenset((formula,)),))
 
 
@@ -351,6 +350,86 @@ def str_to_cnf_universals(string):
         )
     )
     return to_cnf(formula), universals
+
+# brute force resoluton, calls unification until empty clause is given or time limit is reached
+
+
+def resolution(setOfClauses):
+    # returns true if inconsistent, returns false if no empty clause is found
+    somethingUnified = False
+    for indexClause, clause in enumerate(setOfClauses):
+        for indexTerm, term in enumerate(clause):
+            # finds all positive predicates counterpart to a negative predicate
+            if term == 'NOT':
+                currentTerm = clause[indexTerm+1][0]
+                indexCheckClause = indexClause+1
+                # loops through rest of clauses to find any stuff to unify
+                while indexCheckClause < len(setOfClauses):
+                    for indexCheckTerm, checkTerm in enumerate(setOfClauses[indexCheckClause]):
+                        if checkTerm[0] == currentTerm:
+                            newClause = unification(
+                                setOfClauses[indexClause]), setOfClauses[indexCheckCLause]
+                            # return True if inconsistent
+                            # comment these out if you want to see what two clauses will be unified
+                            if newClause == []:
+                                return True
+                            elif newClause == None:
+                                pass
+                            else:
+                                setOfClauses = setOfClauses + newClause
+                                somethingUnified = True
+                            # print(
+                                # "RESOLVE THESE2",  setOfClauses[indexClause], setOfClauses[indexCheckClause])
+                    indexCheckClause += 1
+            # finds all negative predicate counterparts to a positive predicate
+            else:
+                if term[0] != 'NOT':
+                    currentTerm = term[0]
+                    indexCheckClause = indexClause+1
+                    # loops through rest of clauses to find any stuff to unify
+                    while indexCheckClause < len(setOfClauses):
+                        for indexCheckTerm, checkTerm in enumerate(setOfClauses[indexCheckClause]):
+                            if checkTerm == 'NOT':
+                                checkTerm = setOfClauses[indexCheckClause][indexCheckTerm+1][0]
+                                if checkTerm == currentTerm:
+                                    newClause = unification(
+                                        setOfClauses[indexClause]), setOfClauses[indexCheckCLause]
+                                    # return True if inconsistent
+                                    # comment these out if you want to see what two clauses will be unified
+                                    if newClause == []:
+                                        return True
+                                    elif newClause == None:
+                                        pass
+                                    else:
+                                        setOfClauses = setOfClauses + newClause
+                                        somethingUnified = True
+                                    # print(
+                                        # "RESOLVED3",  setOfClauses[indexClause], setOfClauses[indexCheckClause])
+
+                            elif checkTerm[0] == 'NOT':
+                                if checkTerm[1] == currentTerm:
+                                    newClause = unification(
+                                        setOfClauses[indexClause]), setOfClauses[indexCheckCLause]
+                                    # return True if inconsistent
+                                    # comment these out if you want to see what two clauses will be unified
+                                    if newClause == []:
+                                        return True
+                                    elif newClause == None:
+                                        pass
+                                    else:
+                                        setOfClauses = setOfClauses + newClause
+                                        somethingUnified = True
+                                    # print(
+                                        # "RESOLVED4",  setOfClauses[indexClause], setOfClauses[indexCheckClause])
+                        indexCheckClause += 1
+    # if a new clause was added, resolve new list of clauses
+    if somethingUnified:
+        if resolution(setOfClauses):
+            return True
+        else:
+            return False
+    else:
+        return False
 
 
 def findIncSet(fSets):  # noqa
