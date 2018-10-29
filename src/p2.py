@@ -217,17 +217,19 @@ def normalize(formula):
     return positive(formula)
 
 
+def substitute(substitutions, term):
+    """Substitutes the given substitution dict into the term."""
+    if isinstance(term, str):
+        return substitutions.get(term, term)
+
+    fun, arguments = term
+    return fun, tuple(substitute(substitutions, arg) for arg in arguments)
+
+
 def standardize(formula):
     """Generate an equivalent normalized formula with unique variables."""
     fresh = -1  # negative since input cannot have '-' character
     variables = set()
-
-    def substitute(term, substitutions):
-        if isinstance(term, tuple):
-            return (term[0], tuple(substitute(subterm, substitutions)
-                                   for subterm in term[1]))
-
-        return substitutions.get(term, term)
 
     def recur(formula, substitutions):
         nonlocal fresh
@@ -257,7 +259,7 @@ def standardize(formula):
         if isinstance(formula, str):
             return formula
 
-        return tag, tuple(substitute(term, substitutions) for term in args[0])
+        return tag, tuple(substitute(substitutions, term) for term in args[0])
 
     return recur(formula, dict())
 
@@ -286,13 +288,6 @@ def prenex(formula):
 
 def skolemize(formula):
     """Generate an equivalent skolemized formula."""
-    def substitute(term, substitutions):
-        if isinstance(term, tuple):
-            return (term[0], tuple(substitute(subterm, substitutions)
-                                   for subterm in term[1]))
-
-        return substitutions.get(term, term)
-
     def recur(formula, quantifiers, substitutions):
         tag, *args = formula
 
@@ -324,7 +319,7 @@ def skolemize(formula):
         if isinstance(formula, str):
             return formula
 
-        return tag, tuple(substitute(term, substitutions) for term in args[0])
+        return tag, tuple(substitute(substitutions, term) for term in args[0])
 
     return recur(formula, (), dict())
 
@@ -357,15 +352,6 @@ def str_to_cnf(string):
         parse(lex(string))))))))
 
 # brute force resoluton, calls unification until empty clause is given or time limit is reached
-
-
-def substitute(substitutions, term):
-    """Substitutes the given substitution dict into the term."""
-    if isinstance(term, str):
-        return substitutions.get(term, term)
-
-    fun, arguments = term
-    return fun, tuple(substitute(substitutions, arg) for arg in arguments)
 
 
 def find_disagreement(first_term, second_term):
