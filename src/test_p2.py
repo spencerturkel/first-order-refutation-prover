@@ -1,7 +1,5 @@
 """Test p2.py"""
 
-import signal
-
 import pytest
 
 from . import p2
@@ -343,19 +341,6 @@ def test_resolve(clause_one, clause_two, result):
     assert p2.resolve(clause_one, clause_two) == result
 
 
-class timeout:
-    def __init__(self, seconds, handle_timeout):
-        self.handle_timeout = handle_timeout
-        self.seconds = seconds
-
-    def __enter__(self):
-        signal.signal(signal.SIGALRM, self.handle_timeout)
-        signal.alarm(self.seconds)
-
-    def __exit__(self, type, value, traceback):
-        signal.alarm(0)
-
-
 @pytest.mark.parametrize('clauses, seconds', [
     (frozenset({
         frozenset({
@@ -371,10 +356,22 @@ class timeout:
         frozenset({
             ('Q', (('b', ()),))
         })
-    }), 1),
+    }), 0),
+    (frozenset({
+        frozenset({
+            ('P', ('x',)),
+            ('NOT', ('Q', ('x',)))
+        }),
+        frozenset({
+            ('Q', (('a', ()),))
+        }),
+        frozenset({
+            ('NOT', ('P', (('a', ()),)))
+        }),
+    }), 0),
 ])
 def test_find_contradiction(clauses, seconds):
-    with timeout(seconds, lambda: pytest.fail('Timed out')):
+    with p2.timeout(seconds, lambda: pytest.fail('Timed out')):
         assert p2.find_contradiction(clauses) == True
 
 
@@ -393,7 +390,7 @@ def test_find_contradiction(clauses, seconds):
     }), 1),
 ])
 def test_find_contradiction_failure(clauses, seconds):
-    with timeout(seconds, lambda: None):
+    with p2.timeout(seconds):
         assert p2.find_contradiction(clauses) == False
 
 #                 __  __    ______  _____   ____     __    __

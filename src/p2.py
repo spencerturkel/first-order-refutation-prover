@@ -17,6 +17,7 @@
 #    \ \_\ \_\ \_\ \_\ \____/\ \____/\ \_____\ `\___x___/\ \____\ \____\ \_\ \_\
 #     \/_/\/_/\/_/\/_/\/___/  \/___/  \/_____/'\/__//__/  \/____/\/____/\/_/\/_/
 
+import signal
 import string
 from itertools import chain
 
@@ -614,6 +615,19 @@ def find_contradiction(clauses):
     #     return False
 
 
+class timeout:
+    def __init__(self, seconds, handle_timeout=lambda: None):
+        self.handle_timeout = handle_timeout
+        self.seconds = seconds
+
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self.handle_timeout)
+        signal.alarm(self.seconds)
+
+    def __exit__(self, type, value, traceback):
+        signal.alarm(0)
+
+
 def findIncSet(fSets):  # noqa
     """Find indices of inconsistent formula lists.
 
@@ -624,4 +638,15 @@ def findIncSet(fSets):  # noqa
     :param fSets: list of formula lists
     :return: returns the list of inconsistent zero-indexed indices
     """
-    return []  # TODO:
+    result_indices = []
+    for index, formulae in enumerate(fSets):
+        cnf = set()
+        for formula in formulae:
+            cnf |= str_to_cnf(formula)
+        result = None
+        with timeout(30):
+            result = find_contradiction(cnf)
+        if result is True:
+            result_indices.append(index)
+
+    return result_indices
