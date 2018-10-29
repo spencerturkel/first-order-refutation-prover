@@ -331,7 +331,6 @@ def skolemize(formula):
 
 def drop_universals(formula):
     """Generate an equivalent ZOL formula and its set of universals."""
-
     while formula[0] == 'FORALL':
         formula = formula[2]
 
@@ -382,12 +381,13 @@ def find_disagreement(first_term, second_term):
                     continue
                 return sub_result
             return True
-        else:
-            return False
-    elif first_term == second_term:
+
+        return False
+
+    if first_term == second_term:
         return True
-    else:
-        return (first_term, second_term)
+
+    return (first_term, second_term)
 
 
 def variable_in_term(variable, term):
@@ -434,7 +434,7 @@ def resolve(left_clause, right_clause):
     for literal in left_clause:
         if literal[0] == 'NOT':
             literal = literal[1]
-            predicate, first_arg_list = literal
+            predicate = literal[0]
             match = next((l for l in right_clause if l[0] == predicate), None)
             if match is None:
                 continue
@@ -449,35 +449,36 @@ def resolve(left_clause, right_clause):
                  if lit[0] == 'NOT'
                  else substitute(unifier, lit))
                 for lit in chain(left_clause, right_clause)
-                if lit != ('NOT', literal) and lit != match
+                if lit not in (('NOT', literal), match)
             )
 
             return result
-        else:
-            predicate, first_arg_list = literal
-            match = next((l[1] for l in right_clause
-                          if l[0] == 'NOT' and l[1][0] == predicate), None)
-            if match is None:
-                continue
 
-            unifier = unify(literal, match)
+        predicate = literal[0]
+        match = next((l[1] for l in right_clause
+                      if l[0] == 'NOT' and l[1][0] == predicate), None)
+        if match is None:
+            continue
 
-            if unifier is None:
-                continue
+        unifier = unify(literal, match)
 
-            result = frozenset(
-                (('NOT', substitute(unifier, lit[1]))
-                 if lit[0] == 'NOT'
-                 else substitute(unifier, lit))
-                for lit in chain(left_clause, right_clause)
-                if lit != literal and lit != ('NOT', match)
-            )
+        if unifier is None:
+            continue
 
-            return result
+        result = frozenset(
+            (('NOT', substitute(unifier, lit[1]))
+                if lit[0] == 'NOT'
+                else substitute(unifier, lit))
+            for lit in chain(left_clause, right_clause)
+            if lit not in (('NOT', match), literal)
+        )
+
+        return result
+
     for literal in right_clause:
         if literal[0] == 'NOT':
             literal = literal[1]
-            predicate, first_arg_list = literal
+            predicate = literal[0]
             match = next(
                 (l for l in left_clause if l[0] == predicate), None)
             if match is None:
@@ -493,31 +494,31 @@ def resolve(left_clause, right_clause):
                  if lit[0] == 'NOT'
                  else substitute(unifier, lit))
                 for lit in chain(left_clause, right_clause)
-                if lit != ('NOT', literal) and lit != match
+                if lit not in (('NOT', literal), match)
             )
 
             return result
-        else:
-            predicate, first_arg_list = literal
-            match = next((l for l in left_clause
-                          if l[0] == 'NOT' and l[1][0] == predicate), None)
-            if match is None:
-                continue
 
-            unifier = unify(literal, match)
+        predicate = literal[0]
+        match = next((l for l in left_clause
+                      if l[0] == 'NOT' and l[1][0] == predicate), None)
+        if match is None:
+            continue
 
-            if unifier is None:
-                continue
+        unifier = unify(literal, match)
 
-            result = frozenset(
-                (('NOT', substitute(unifier, lit[1]))
-                 if lit[0] == 'NOT'
-                 else substitute(unifier, lit))
-                for lit in chain(left_clause, right_clause)
-                if lit != literal and lit != ('NOT', match)
-            )
+        if unifier is None:
+            continue
 
-            return result
+        result = frozenset(
+            (('NOT', substitute(unifier, lit[1]))
+                if lit[0] == 'NOT'
+                else substitute(unifier, lit))
+            for lit in chain(left_clause, right_clause)
+            if lit not in (literal, ('NOT', match))
+        )
+
+        return result
 
     return None
 
