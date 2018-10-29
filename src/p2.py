@@ -643,12 +643,15 @@ def findIncSet(fSets):  # noqa
     result_indices = []
     for index, formulae in enumerate(fSets):
         cnf = set()
-        for formula in formulae:
-            cnf |= str_to_cnf(formula)
-        result = None
-        with timeout(30):
-            result = find_contradiction(cnf)
-        if result is True:
-            result_indices.append(index)
+        try:
+            for formula in formulae:
+                cnf |= str_to_cnf(formula)
+            result = None
+            with timeout(30):
+                result = find_contradiction(cnf)
+            if result is True:
+                result_indices.append(index)
+        except:  # noqa
+            continue
 
     return result_indices
