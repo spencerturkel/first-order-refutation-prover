@@ -90,38 +90,20 @@ def test_prenex(formula, prenex):
     (('OR', ('AND', ('NOT', ('p', ())), ('NOT', ('q', ()))), ('NOT', ('z', ()))),
      ('OR', ('AND', ('NOT', ('p', ())), ('NOT', ('q', ()))), ('NOT', ('z', ())))),
     (('EXISTS', 'x', ('FORALL', 'y', ('NOT', ('p', ())))),
-     ('FORALL', 'y', ('NOT', ('p', ())))),
+     ('NOT', ('p', ()))),
     (('EXISTS', 'x', ('EXISTS', '-1', ('OR', ('p', ()), ('q', ())))),
         ('OR', ('p', ()), ('q', ()))),
     (('FORALL', 'x', ('EXISTS', 'y', ('p', ('x', 'y')))),
-     ('FORALL', 'x', ('p', ('x', ('y', ('x',)))))),
+     ('p', ('x', ('y', ('x',))))),
     (('FORALL', 'x',
       ('EXISTS', '-1', ('FORALL', '-2', ('AND', ('p', ('-1',)), ('q', ()))))),
-        ('FORALL', 'x',
-         ('FORALL', '-2', ('AND', ('p', (('-1', ('x',)),)), ('q', ()))))),
+        ('AND', ('p', (('-1', ('x',)),)), ('q', ()))),
     (('FORALL', 'x',
       ('FORALL', '-1', ('EXISTS', '-2', ('AND', ('p', ('-1',)), ('q', ('-2',)))))),
-        ('FORALL', 'x',
-         ('FORALL', '-1', ('AND', ('p', ('-1',)), ('q', (('-2', ('x', '-1')),)))))),
+     ('AND', ('p', ('-1',)), ('q', (('-2', ('x', '-1')),)))),
 ])
 def test_skolemize(formula, skolemized):
     assert p2.skolemize(formula) == skolemized
-
-
-@pytest.mark.parametrize('fol, zol', [
-    (('OR', ('AND', ('NOT', ('p', ())), ('NOT', ('q', ()))), ('NOT', ('z', ()))),
-     ('OR', ('AND', ('NOT', ('p', ())), ('NOT', ('q', ()))), ('NOT', ('z', ())))),
-    (('FORALL', 'y', ('NOT', ('p', ()))), ('NOT', ('p', ()))),
-    (('OR', ('p', ()), ('q', ())), ('OR', ('p', ()), ('q', ()))),
-    (('FORALL', 'x',
-      ('FORALL', '-2', ('AND', ('p', (('-1', ('x',)),)), ('q', ())))),
-        ('AND', ('p', (('-1', ('x',)),)), ('q', ()))),
-    (('FORALL', 'x',
-      ('FORALL', '-1', ('AND', ('p', ('-1',)), ('q', (('-2', ('x', '-1')),))))),
-     ('AND', ('p', ('-1',)), ('q', (('-2', ('x', '-1')),)))),
-])
-def test_drop_universals(fol, zol):
-    assert p2.drop_universals(fol) == zol
 
 
 @pytest.mark.parametrize('zol, cnf', [

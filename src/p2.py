@@ -294,11 +294,10 @@ def skolemize(formula):
         if tag == 'FORALL':
             var = args[0]
 
-            return (tag, var,
-                    recur(args[1],
-                          (quantifiers + (var,)) if var not in quantifiers
-                          else quantifiers,
-                          substitutions))
+            return recur(args[1],
+                         (quantifiers + (var,)) if var not in quantifiers
+                         else quantifiers,
+                         substitutions)
 
         if tag == 'EXISTS':
             var = args[0]
@@ -324,14 +323,6 @@ def skolemize(formula):
     return recur(formula, (), dict())
 
 
-def drop_universals(formula):
-    """Generate an equivalent ZOL formula and its set of universals."""
-    while formula[0] == 'FORALL':
-        formula = formula[2]
-
-    return formula
-
-
 def to_cnf(formula):
     # """Generate an equivalent CNF formula from a ZOL formula."""
     tag, *args = formula
@@ -348,8 +339,8 @@ def to_cnf(formula):
 
 def str_to_cnf(string):
     """Parse an input string into a CNF formula."""
-    return to_cnf(drop_universals(skolemize(prenex(standardize(normalize(
-        parse(lex(string))))))))
+    return to_cnf(skolemize(prenex(standardize(normalize(
+        parse(lex(string)))))))
 
 # brute force resoluton, calls unification until empty clause is given or time limit is reached
 
