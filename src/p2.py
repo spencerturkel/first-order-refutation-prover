@@ -19,6 +19,7 @@
 
 import signal
 import string
+from contextlib import contextmanager
 from itertools import chain
 
 
@@ -615,17 +616,16 @@ def find_contradiction(clauses):
     #     return False
 
 
-class timeout:
-    def __init__(self, seconds, handle_timeout=lambda: None):
-        self.handle_timeout = handle_timeout
-        self.seconds = seconds
+@contextmanager
+def timeout(seconds, on_timeout=lambda: None):
+    """Run a context for a certain number of seconds.
 
-    def __enter__(self):
-        signal.signal(signal.SIGALRM, self.handle_timeout)
-        signal.alarm(self.seconds)
-
-    def __exit__(self, type, value, traceback):
-        signal.alarm(0)
+    An optional handler callback will be called if the context times out.
+    """
+    signal.signal(signal.SIGALRM, lambda _1, _2: on_timeout())
+    signal.alarm(seconds)
+    yield
+    signal.alarm(0)
 
 
 def findIncSet(fSets):  # noqa
