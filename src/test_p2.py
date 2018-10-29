@@ -1,5 +1,7 @@
 """Test p2.py"""
 
+import signal
+
 import pytest
 
 from . import p2
@@ -341,8 +343,21 @@ def test_resolve(clause_one, clause_two, result):
     assert p2.resolve(clause_one, clause_two) == result
 
 
-@pytest.mark.parametrize('setOfClauses', [
-    frozenset({
+class timeout:
+    def __init__(self, seconds, handle_timeout):
+        self.handle_timeout = handle_timeout
+        self.seconds = seconds
+
+    def __enter__(self):
+        signal.signal(signal.SIGALRM, self.handle_timeout)
+        signal.alarm(self.seconds)
+
+    def __exit__(self, type, value, traceback):
+        signal.alarm(0)
+
+
+@pytest.mark.parametrize('clauses, seconds', [
+    (frozenset({
         frozenset({
             ('P', ('x',)),
             ('NOT', ('Q', ('x',)))
@@ -356,12 +371,30 @@ def test_resolve(clause_one, clause_two, result):
         frozenset({
             ('Q', (('b', ()),))
         })
-    }),
+    }), 1),
 ])
-@pytest.mark.timeout(10, method='signal')
-@pytest.mark.skip
-def test_find_contradiction_within_time(setOfClauses):
-    p2.find_contradiction(setOfClauses)
+def test_find_contradiction(clauses, seconds):
+    with timeout(seconds, lambda: pytest.fail('Timed out')):
+        assert p2.find_contradiction(clauses) == True
+
+
+@pytest.mark.parametrize('clauses, seconds', [
+    (frozenset({
+        frozenset({
+            ('P', ('x',)),
+            ('NOT', ('Q', ('x',)))
+        }),
+        frozenset({
+            ('Q', (('a', ()),))
+        }),
+        frozenset({
+            ('Q', (('b', ()),))
+        })
+    }), 1),
+])
+def test_find_contradiction_failure(clauses, seconds):
+    with timeout(seconds, lambda: None):
+        assert p2.find_contradiction(clauses) == False
 
 #                 __  __    ______  _____   ____     __    __
 #                /\ \/\ \  /\  _  \/\  _ `\/\  _`\  /\ \  /\ \
