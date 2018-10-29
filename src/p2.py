@@ -370,24 +370,25 @@ def substitute(substitutions, term):
 
 def find_disagreement(first_term, second_term):
     """Finds the disagreement set of the terms."""
-    # TODO: make this iterative rather than recursive
-    if isinstance(first_term, tuple) and isinstance(second_term, tuple):
-        if first_term[0] == second_term[0]:
-            for a1, a2 in zip(first_term[1], second_term[1]):
-                sub_result = find_disagreement(a1, a2)
-                if sub_result is False:
-                    return False
-                if sub_result is True:
-                    continue
-                return sub_result
-            return True
+    term_pair_queue = [(first_term, second_term)]
 
-        return False
+    while term_pair_queue:
+        first_term, second_term = term_pair_queue.pop(0)
 
-    if first_term == second_term:
-        return True
+        if isinstance(first_term, tuple) and isinstance(second_term, tuple):
 
-    return (first_term, second_term)
+            if first_term[0] == second_term[0]:
+                term_pair_queue.extend(zip(first_term[1], second_term[1]))
+                continue
+
+            return False
+
+        if first_term == second_term:
+            continue
+
+        return (first_term, second_term)
+
+    return True
 
 
 def variable_in_term(variable, term):
