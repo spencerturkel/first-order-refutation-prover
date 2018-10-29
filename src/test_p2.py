@@ -372,7 +372,7 @@ def test_resolve(clause_one, clause_two, result):
 ])
 def test_find_contradiction(clauses, seconds):
     with p2.timeout(seconds, lambda: pytest.fail('Timed out')):
-        assert p2.find_contradiction(clauses) == True
+        assert p2.find_contradiction(clauses)
 
 
 @pytest.mark.parametrize('clauses, seconds', [
@@ -391,7 +391,7 @@ def test_find_contradiction(clauses, seconds):
 ])
 def test_find_contradiction_failure(clauses, seconds):
     with p2.timeout(seconds):
-        assert p2.find_contradiction(clauses) == False
+        assert not p2.find_contradiction(clauses)
 
 #                 __  __    ______  _____   ____     __    __
 #                /\ \/\ \  /\  _  \/\  _ `\/\  _`\  /\ \  /\ \
