@@ -521,6 +521,19 @@ def resolve(left_clause, right_clause):
 
 
 def find_contradiction(clauses):
+    clauses = list(clauses)
+    while clauses:
+        left_clause = clauses.pop()
+        new_clauses = []
+        for right_clause in clauses:
+            resolvent = resolve(left_clause, right_clause)
+            if resolvent is not None:
+                if resolvent == frozenset():
+                    return True
+                new_clauses.append(resolvent)
+        if new_clauses:
+            clauses.extend(new_clauses)
+
     return False
 
 # def find_contradiction(setOfClauses):
