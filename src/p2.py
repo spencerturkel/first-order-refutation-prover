@@ -501,7 +501,7 @@ def findIncSet(fSets):  # noqa
     num_sets = len(fSets)
 
     if num_sets == 0:
-        return list(result_indices)
+        return list(result)
 
     time_limit = 600 / num_sets
 
