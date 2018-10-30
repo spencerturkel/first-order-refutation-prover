@@ -337,13 +337,16 @@ def test_peano():
     assert peano(4) == '(s (s (s (s 0))))'
 
 
-@pytest.mark.parametrize('inconsistency, limit_seconds', [
-    ('(NOT (eq {0} {1}))'.format(peano(300), peano(300)), 1),
-    ('(NOT (eq (plus {0} 0) {0}))'.format(peano(300)), 1),
-    # ('(NOT (eq (plus {1} {0}) {0}))'.format(peano(1), peano(0)), 10),
+@pytest.mark.parametrize('inconsistency', [
+    '(NOT (eq {0} {1}))'.format(peano(300), peano(300)),
+    '(NOT (eq (plus {0} 0) {0}))'.format(peano(300)),
+    # '(NOT (eq (plus {1} {0}) {0}))'.format(peano(1), peano(0)),
 ])
-def test_is_inconsistent_arithmetic(inconsistency, limit_seconds):  # noqa
-    assert p2.is_inconsistent(arithmetic + [inconsistency], limit_seconds)
+def test_is_inconsistent_arithmetic(inconsistency):  # noqa
+    class FakeEvent:
+        def is_set(self):
+            return False
+    assert p2.is_inconsistent(FakeEvent(), arithmetic + [inconsistency])
 
 #                 __  __    ______  _____   ____     __    __
 #                /\ \/\ \  /\  _  \/\  _ `\/\  _`\  /\ \  /\ \

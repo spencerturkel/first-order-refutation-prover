@@ -208,10 +208,14 @@ class _CnfParser:
 
     def _existential(self):
         ex_quantifier = self._quantified_variable()
+        old_sub = self.substitutions.get(ex_quantifier, None)
         self.substitutions[ex_quantifier] = (
             ex_quantifier, tuple(self.universal_context))
         formula = self.formula()
-        del self.substitutions[ex_quantifier]
+        if old_sub:
+            self.substitutions[ex_quantifier] = old_sub
+        else:
+            del self.substitutions[ex_quantifier]
         return formula
 
     def _universal(self):
@@ -475,11 +479,11 @@ def timeout(fn, seconds):
         return result_queue.get()
 
 
-def is_inconsistent(formulae, limit_seconds):
+def is_inconsistent(done, formulae):
     cnf = set()
     for formula in formulae:
         cnf |= str_to_cnf(formula)
-    return timeout(lambda done: find_contradiction(done, cnf), limit_seconds)
+    return find_contradiction(done, cnf)
 
 
 def findIncSet(fSets):  # noqa
@@ -493,9 +497,18 @@ def findIncSet(fSets):  # noqa
     :return: returns the list of inconsistent zero-indexed indices
     """
     result_indices = []
+    num_sets = len(fSets)
+
+    if num_sets == 0:
+        return result_indices
+
+    time_limit = 600 / num_sets
+
     for index, formulae in enumerate(fSets):
         try:
-            if is_inconsistent(formulae, 10):
+            def target(formulae):
+                return lambda done: is_inconsistent(done, formulae)
+            if timeout(target(formulae), time_limit):
                 result_indices.append(index)
         except:  # noqa
             continue
