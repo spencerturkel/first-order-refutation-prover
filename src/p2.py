@@ -182,6 +182,177 @@ def parse(formula_tokens):
     return _Parser(formula_tokens).formula()
 
 
+class _SmartParser:
+    __slots__ = (
+        'fresh_num',
+        'negated',
+        'peek_token',
+        'tokens',
+        'substitutions',
+        'universal_context',
+        'variables',
+    )
+
+    def __init__(self, tokens):
+        self.fresh_num = -1
+        self.negated = False
+        self.peek_token = None
+        self.tokens = tokens
+        self.universal_context = []
+        self.substitutions = dict()
+        self.variables = set()
+
+    def formula(self):
+        token = self._next()
+
+        if token != '(':
+            return token
+
+        expr = self._expr()
+        self._expect(')')
+        return expr
+
+    def _expect(self, token):
+        if self._next() != token:
+            raise ParseError
+
+    def _expr(self):
+        token = self._next()
+        if self.negated:
+            if token == 'FORALL':
+                # ~ forall x, p x = exists x, ~ p x
+                return self._existential()
+            if token == 'EXISTS':
+                # ~ exists x, p x = forall x, ~ p x
+                return self._universal()
+            if token == 'AND':
+                # ~ (p /\ q) = ~ p \/ ~ q
+                left = self.formula()
+                right = self.formula()
+                return frozenset(l | r for l in left for r in right)
+            if token == 'OR':
+                # ~ (p \/ q) = ~ p /\ ~ q
+                return self.formula() | self.formula()
+            if token == 'IMPLIES':
+                # ~ (p -> q) = ~ (~ p \/ q) = p /\ ~ q
+                self.negated = False
+                antecedent = self.formula()
+                self.negated = True
+                return antecedent | self.formula()
+            if token == 'NOT':
+                # ~ ~ p = p
+                self.negated = False
+                formula = self.formula()
+                self.negated = True
+                return formula
+            return frozenset((
+                frozenset((
+                    ('NOT', (token, self._terms())),
+                )),
+            ))
+
+        if token == 'FORALL':
+            return self._universal()
+        if token == 'EXISTS':
+            return self._existential()
+        if token == 'AND':
+            return self.formula() | self.formula()
+        if token == 'OR':
+            left = self.formula()
+            right = self.formula()
+            return frozenset(l | r for l in left for r in right)
+        if token == 'IMPLIES':
+            # p -> q = ~ p \/ q
+            self.negated = True
+            antecedent = self.formula()
+            self.negated = False
+            consequent = self.formula()
+            return frozenset(l | r for l in antecedent for r in consequent)
+        if token == 'NOT':
+            self.negated = True
+            formula = self.formula()
+            self.negated = False
+            return formula
+        return frozenset((
+            frozenset((
+                (token, self._terms()),
+            )),
+        ))
+
+    def _next(self):
+        if self.peek_token is not None:
+            token = self.peek_token
+            self.peek_token = None
+            return token
+
+        return next(self.tokens)
+
+    def _existential(self):
+        ex_quantifier = self._quantified_variable()
+        self.substitutions[ex_quantifier] = (
+            ex_quantifier, tuple(self.universal_context))
+        formula = self.formula()
+        del self.substitutions[ex_quantifier]
+        return formula
+
+    def _universal(self):
+        quantifier = self._quantified_variable()
+        self.variables.add(quantifier)
+        self.universal_context.append(quantifier)
+        formula = self.formula()
+        self.universal_context.pop()
+        return formula
+
+    def _quantified_variable(self):
+        var = self._next()
+        if var in self.variables:
+            var = str(self.fresh_num)
+            self.fresh_num -= 1
+        return var
+
+    def _terms(self):
+        terms = []
+        while True:
+            token = self._peek()
+            if token == ')':
+                return tuple(terms)
+            if token == '(':
+                self._next()
+                terms.append(self._sub_term())
+            else:
+                self._next()
+                terms.append(token if token in self.variables
+                             else self.substitutions.get(token, (token, ())))
+
+    def _peek(self):
+        if self.peek_token is None:
+            try:
+                self.peek_token = next(self.tokens)
+            except StopIteration as e:
+                raise ParseError from e
+        return self.peek_token
+
+    def _sub_term(self):
+        root = self._next()
+        if root in {'(', ')'}:
+            raise ParseError
+        terms = []
+        while True:
+            token = self._next()
+            if token == ')':
+                return root, tuple(terms)
+            if token == '(':
+                terms.append(self._sub_term())
+            else:
+                terms.append(token if token in self.variables
+                             else self.substitutions.get(token, (token, ())))
+
+
+def smart_parse(formula_tokens):
+    """Parse the formula tokens into an abstract syntax tree."""
+    return _SmartParser(formula_tokens).formula()
+
+
 def normalize(formula):
     """Get the normalized form of the formula."""
     def positive(formula):
@@ -339,8 +510,9 @@ def to_cnf(formula):
 
 def str_to_cnf(string):
     """Parse an input string into a CNF formula."""
-    return to_cnf(skolemize(prenex(standardize(normalize(
-        parse(lex(string)))))))
+    return _SmartParser(lex(string)).formula()
+    # return to_cnf(skolemize(prenex(standardize(normalize(
+    #     parse(lex(string)))))))
 
 # brute force resoluton, calls unification until empty clause is given or time limit is reached
 

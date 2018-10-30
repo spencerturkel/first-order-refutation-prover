@@ -33,6 +33,27 @@ def test_parsing(tokens, ast):
     assert p2.parse(iter(tokens.split(' '))) == ast
 
 
+@pytest.mark.parametrize('tokens, ast', [
+    ('( FORALL x ( p x y ) )', frozenset({
+        frozenset({('p', ('x', ('y', ())))})
+    })),
+    ('( FORALL x ( IMPLIES ( p ( f x y ) z ) ( EXISTS y ( p y ) ) ) )',
+     frozenset({
+         frozenset({
+             ('NOT', ('p', (('f', ('x', ('y', ()))), ('z', ())))),
+             ('p', (('y', ('x',)),)),
+         })
+     })),
+    ('( NOT ( AND ( OR ( p ) ( EXISTS q ( r ) ) ) ( z ) ) )',
+     frozenset({
+         frozenset({('NOT', ('p', ())), ('NOT', ('z', ()))}),
+         frozenset({('NOT', ('r', ())), ('NOT', ('z', ()))}),
+     }))
+])
+def test_smart_parsing(tokens, ast):
+    assert p2.smart_parse(iter(tokens.split(' '))) == ast
+
+
 @pytest.mark.parametrize('formula, normalized', [
     (('p', ()), ('p', ())),
     (('NOT', ('p', ())), ('NOT', ('p', ()))),
@@ -127,34 +148,43 @@ def test_to_cnf(zol, cnf):
 
 
 @pytest.mark.parametrize('s, cnf', [
-    ('(NOT (AND (OR (p) (EXISTS q (r))) z))',
-     frozenset((frozenset((('NOT', ('p', ())), ('NOT', 'z'))),
-                frozenset((('NOT', ('r', ())), ('NOT', 'z')))))),
+    ('(NOT (AND (OR (p) (EXISTS q (r))) (z)))',
+     frozenset({
+         frozenset({('NOT', ('p', ())), ('NOT', ('z', ()))}),
+         frozenset({('NOT', ('r', ())), ('NOT', ('z', ()))})
+     })),
     ('(OR (FORALL x (AND (p x) (NOT (q)))) (EXISTS y (AND (p y) (q))))',
-        frozenset((
-            frozenset((('p', ('x',)), ('p', (('y', ('x',)),)))),
-            frozenset((('p', ('x',)), ('q', ()))),
-            frozenset((('NOT', ('q', ())), ('p', (('y', ('x',)),)))),
-            frozenset((('NOT', ('q', ())), ('q', ())))))),
+        frozenset({
+            frozenset({('p', ('x',)), ('p', (('y', ()),))}),
+            frozenset({('p', ('x',)), ('q', ())}),
+            frozenset({('NOT', ('q', ())), ('p', (('y', ()),))}),
+            frozenset({('NOT', ('q', ())), ('q', ())})
+        })),
     ('(FORALL x (IMPLIES (P x) (Q x)))',
      frozenset({frozenset({('NOT', ('P', ('x',))), ('Q', ('x',))})})),
     ('(P (f a))',
-     frozenset({frozenset({('P', (('f', ('a',)),))})})),
+     frozenset({frozenset({('P', (('f', (('a', ()),)),))})})),
     ('(NOT (Q (f a)))',
-     frozenset({frozenset({('NOT', ('Q', (('f', ('a',)),)))})})),
+     frozenset({frozenset({('NOT', ('Q', (('f', (('a', ()),)),)))})})),
     ('(FORALL x (P x))',
      frozenset({frozenset({('P', ('x',))})})),
     ('(NOT (FORALL x (Q x)))',
      frozenset({frozenset({('NOT', ('Q', (('x', ()),)))})})),
     ('(EXISTS x (AND (P x) (Q b)))',
-     frozenset({frozenset({('Q', ('b',))}), frozenset({('P', (('x', ()),))})})),
+     frozenset({
+         frozenset({('Q', (('b', ()),))}),
+         frozenset({('P', (('x', ()),))})
+     })),
     ('(NOT (NOT (P a)))',
-     frozenset({frozenset({('P', ('a',))})})),
-    ('(big_f (f a b) (f b c))',
+     frozenset({frozenset({('P', (('a', ()),))})})),
+    ('(FORALL a (FORALL b (FORALL c (big_f (f a b) (f b c)))))',
      frozenset({frozenset({('big_f', (('f', ('a', 'b')), ('f', ('b', 'c'))))})})),
     ('(NOT (big_f (f a b) (f b c)))',
      frozenset({frozenset({
-         ('NOT', ('big_f', (('f', ('a', 'b')), ('f', ('b', 'c')))))
+         ('NOT',
+          ('big_f', (
+              ('f', (('a', ()), ('b', ()))),
+              ('f', (('b', ()), ('c', ()))))))
      })})),
     ('''(FORALL X (FORALL Y (FORALL Z
             (IMPLIES (AND (big_f X Y) (big_f Y Z)) (big_f X Z))
