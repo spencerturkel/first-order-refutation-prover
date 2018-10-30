@@ -242,6 +242,21 @@ def test_resolve(clause_one, clause_two, result):
     assert p2.resolve(clause_one, clause_two) == result
 
 
+def test_timeout():
+    with p2.timeout(1, pytest.fail):
+        pass
+
+    def handler():
+        handler.called = True
+    handler.called = False
+
+    with p2.timeout(1, handler):
+        while True:
+            pass
+
+    assert handler.called
+
+
 @pytest.mark.parametrize('clauses, seconds', [
     (frozenset({
         frozenset({
@@ -293,6 +308,24 @@ def test_find_contradiction(clauses, seconds):
 def test_find_contradiction_failure(clauses, seconds):
     with p2.timeout(seconds):
         assert not p2.find_contradiction(clauses)
+
+
+@pytest.mark.parametrize('fSets, indices', [
+    ([[  # noqa
+        '(FORALL x (eq x x))',
+        '(FORALL x (FORALL y (IMPLIES (eq x y) (eq y x))))',
+        '''(FORALL x (FORALL y (FORALL z
+            (IMPLIES (AND (eq x y) (eq y z)) (eq x z)))))''',
+        '''(FORALL x (NOT (eq x (s x))))''',
+        '''(FORALL x (FORALL y (IMPLIES (eq (s x) (s y)) (eq x y))))''',
+        '''(FORALL x (eq (plus x 0) x))''',
+        '''(FORALL x (eq (plus x (s y)) (s (plus x y))))''',
+        '''(NOT (eq (plus 1 1) 2))''',
+    ]], [0]),
+])
+@pytest.mark.skip
+def test_findIncSet(fSets, indices):  # noqa
+    assert p2.findIncSet(fSets) == indices
 
 #                 __  __    ______  _____   ____     __    __
 #                /\ \/\ \  /\  _  \/\  _ `\/\  _`\  /\ \  /\ \
