@@ -310,22 +310,22 @@ def test_find_contradiction_failure(clauses, seconds):
         assert not p2.find_contradiction(clauses)
 
 
-@pytest.mark.parametrize('fSets, indices', [
-    ([[  # noqa
-        '(FORALL x (eq x x))',
-        '(FORALL x (FORALL y (IMPLIES (eq x y) (eq y x))))',
-        '''(FORALL x (FORALL y (FORALL z
-            (IMPLIES (AND (eq x y) (eq y z)) (eq x z)))))''',
-        '''(FORALL x (NOT (eq x (s x))))''',
-        '''(FORALL x (FORALL y (IMPLIES (eq (s x) (s y)) (eq x y))))''',
-        '''(FORALL x (eq (plus x 0) x))''',
-        '''(FORALL x (eq (plus x (s y)) (s (plus x y))))''',
-        '''(NOT (eq (plus 1 1) 2))''',
-    ]], [0]),
+arithmetic = [
+    '(FORALL x (eq x x))',
+    '(FORALL x (FORALL y (IMPLIES (eq x y) (eq y x))))',
+    '(FORALL x (NOT (eq x (s x))))',
+    '(FORALL x (FORALL y (IMPLIES (eq (s x) (s y)) (eq x y))))',
+    '(FORALL x (eq (plus x 0) x))',
+    '(FORALL x (eq (plus x (s y)) (s (plus x y))))',
+]
+
+
+@pytest.mark.parametrize('inconsistency, limit_seconds', [
+    ('(NOT (eq (s (s 0)) (s (s 0))))', 1),
+    # ('(NOT (eq (plus (s 0) 0) (s 0)))', 10),
 ])
-@pytest.mark.skip
-def test_findIncSet(fSets, indices):  # noqa
-    assert p2.findIncSet(fSets) == indices
+def test_is_inconsistent_arithmetic(inconsistency, limit_seconds):  # noqa
+    assert p2.is_inconsistent(arithmetic + [inconsistency], limit_seconds)
 
 #                 __  __    ______  _____   ____     __    __
 #                /\ \/\ \  /\  _  \/\  _ `\/\  _`\  /\ \  /\ \

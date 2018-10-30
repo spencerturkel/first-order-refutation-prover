@@ -475,6 +475,14 @@ def timeout(seconds, on_timeout=lambda: None):
         signal.alarm(0)
 
 
+def is_inconsistent(formulae, limit_seconds):
+    cnf = set()
+    for formula in formulae:
+        cnf |= str_to_cnf(formula)
+    with timeout(limit_seconds):
+        return find_contradiction(cnf)
+
+
 def findIncSet(fSets):  # noqa
     """Find indices of inconsistent formula lists.
 
@@ -487,14 +495,8 @@ def findIncSet(fSets):  # noqa
     """
     result_indices = []
     for index, formulae in enumerate(fSets):
-        cnf = set()
         try:
-            for formula in formulae:
-                cnf |= str_to_cnf(formula)
-            result = None
-            with timeout(10):
-                result = find_contradiction(cnf)
-            if result is True:
+            if is_inconsistent(formulae, 10):
                 result_indices.append(index)
         except:  # noqa
             continue
