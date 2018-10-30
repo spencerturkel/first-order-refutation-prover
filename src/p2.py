@@ -441,9 +441,9 @@ def resolve(left_clause, right_clause):
 
 
 def find_contradiction(clauses):
-    clauses = list(clauses)
-    while clauses:
-        left_clause = clauses.pop()
+    clause_stack = list(clauses)
+    while clause_stack:
+        left_clause = clause_stack.pop()
         new_clauses = []
         for right_clause in clauses:
             resolvent = resolve(left_clause, right_clause)
@@ -452,7 +452,7 @@ def find_contradiction(clauses):
                     return True
                 new_clauses.append(resolvent)
         if new_clauses:
-            clauses.extend(new_clauses)
+            clause_stack.extend(new_clauses)
 
     return False
 
@@ -466,7 +466,7 @@ def timeout(seconds, on_timeout=lambda: None):
     def on_signal():
         raise TimeoutError
     signal.signal(signal.SIGALRM, lambda _1, _2: on_signal())
-    signal.alarm(seconds)
+    # signal.alarm(seconds)
     try:
         yield
     except TimeoutError:
