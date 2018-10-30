@@ -17,6 +17,7 @@
 #    \ \_\ \_\ \_\ \_\ \____/\ \____/\ \_____\ `\___x___/\ \____\ \____\ \_\ \_\
 #     \/_/\/_/\/_/\/_/\/___/  \/___/  \/_____/'\/__//__/  \/____/\/____/\/_/\/_/
 
+import heapq
 import signal
 import string
 from contextlib import contextmanager
@@ -441,18 +442,16 @@ def resolve(left_clause, right_clause):
 
 
 def find_contradiction(clauses):
-    clause_stack = list(clauses)
-    while clause_stack:
-        left_clause = clause_stack.pop()
-        new_clauses = []
+    clause_heap = [(len(c), c) for c in list(clauses)]
+    heapq.heapify(clause_heap)
+    while clause_heap:
+        _, left_clause = heapq.heappop(clause_heap)
         for right_clause in clauses:
             resolvent = resolve(left_clause, right_clause)
             if resolvent is not None:
                 if resolvent == frozenset():
                     return True
-                new_clauses.append(resolvent)
-        if new_clauses:
-            clause_stack.extend(new_clauses)
+                heapq.heappush(clause_heap, (len(resolvent), resolvent))
 
     return False
 

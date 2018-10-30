@@ -322,7 +322,7 @@ arithmetic = [
 
 @pytest.mark.parametrize('inconsistency, limit_seconds', [
     ('(NOT (eq (s (s 0)) (s (s 0))))', 1),
-    ('(NOT (eq (plus (s 0) 0) (s 0)))', 3),
+    ('(NOT (eq (plus (s 0) 0) (s 0)))', 1),
 ])
 def test_is_inconsistent_arithmetic(inconsistency, limit_seconds):  # noqa
     assert p2.is_inconsistent(arithmetic + [inconsistency], limit_seconds)
