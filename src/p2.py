@@ -17,14 +17,11 @@
 #    \ \_\ \_\ \_\ \_\ \____/\ \____/\ \_____\ `\___x___/\ \____\ \____\ \_\ \_\
 #     \/_/\/_/\/_/\/_/\/___/  \/___/  \/_____/'\/__//__/  \/____/\/____/\/_/\/_/
 
-import concurrent.futures
 import heapq
 import multiprocessing
 import queue
-import signal
 import string
-import threading
-from contextlib import contextmanager
+from functools import lru_cache
 from itertools import chain
 
 
@@ -303,6 +300,7 @@ def find_disagreement(first_term, second_term):
     return True
 
 
+@lru_cache(maxsize=None)
 def variable_in_term(variable, term):
     term_stack = [term]
     while term_stack:
@@ -324,6 +322,7 @@ def substitute(substitutions, term):
     return fun, tuple(substitute(substitutions, arg) for arg in arguments)
 
 
+@lru_cache(maxsize=None)
 def unify(term_one, term_two):
     """Unifies the terms, producing the most general unifier or None."""
     substitutions = dict()
@@ -351,6 +350,7 @@ def unify(term_one, term_two):
         term_two = substitute(new_substitution, term_two)
 
 
+@lru_cache(maxsize=None)
 def resolve(left_clause, right_clause):
     """Resolve the clauses, producing the resolvent clause or None."""
     for literal in left_clause:

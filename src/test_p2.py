@@ -324,9 +324,23 @@ arithmetic = [
 ]
 
 
+def peano(num):
+    result = '0'
+    for _ in range(num):
+        result = '(s {0})'.format(result)
+    return result
+
+
+def test_peano():
+    assert peano(0) == '0'
+    assert peano(1) == '(s 0)'
+    assert peano(4) == '(s (s (s (s 0))))'
+
+
 @pytest.mark.parametrize('inconsistency, limit_seconds', [
-    ('(NOT (eq (s (s 0)) (s (s 0))))', 1),
-    ('(NOT (eq (plus (s 0) 0) (s 0)))', 1),
+    ('(NOT (eq {0} {1}))'.format(peano(300), peano(300)), 1),
+    ('(NOT (eq (plus {0} 0) {0}))'.format(peano(300)), 1),
+    # ('(NOT (eq (plus {1} {0}) {0}))'.format(peano(1), peano(0)), 10),
 ])
 def test_is_inconsistent_arithmetic(inconsistency, limit_seconds):  # noqa
     assert p2.is_inconsistent(arithmetic + [inconsistency], limit_seconds)
