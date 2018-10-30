@@ -17,9 +17,13 @@
 #    \ \_\ \_\ \_\ \_\ \____/\ \____/\ \_____\ `\___x___/\ \____\ \____\ \_\ \_\
 #     \/_/\/_/\/_/\/_/\/___/  \/___/  \/_____/'\/__//__/  \/____/\/____/\/_/\/_/
 
+import concurrent.futures
 import heapq
+import multiprocessing
+import queue
 import signal
 import string
+import threading
 from contextlib import contextmanager
 from itertools import chain
 
@@ -441,10 +445,10 @@ def resolve(left_clause, right_clause):
     return None
 
 
-def find_contradiction(clauses):
+def find_contradiction(event, clauses):
     clause_heap = [(len(c), c) for c in list(clauses)]
     heapq.heapify(clause_heap)
-    while clause_heap:
+    while not event.is_set() and clause_heap:
         _, left_clause = heapq.heappop(clause_heap)
         for right_clause in clauses:
             resolvent = resolve(left_clause, right_clause)
@@ -456,30 +460,26 @@ def find_contradiction(clauses):
     return False
 
 
-@contextmanager
-def timeout(seconds, on_timeout=lambda: None):
-    """Run a context for a certain number of seconds.
+def timeout(fn, seconds):
+    done = multiprocessing.Event()
+    result_queue = multiprocessing.Queue(maxsize=1)
 
-    An optional handler callback will be called if the context times out.
-    """
-    def on_signal():
-        raise TimeoutError
-    signal.signal(signal.SIGALRM, lambda _1, _2: on_signal())
-    signal.alarm(seconds)
+    def queued_fn():
+        result_queue.put_nowait(fn(done))
+    process = multiprocessing.Process(group=None, target=queued_fn)
+    process.start()
     try:
-        yield
-    except TimeoutError:
-        on_timeout()
-    finally:
-        signal.alarm(0)
+        return result_queue.get(block=True, timeout=seconds)
+    except queue.Empty:
+        done.set()
+        return result_queue.get()
 
 
 def is_inconsistent(formulae, limit_seconds):
     cnf = set()
     for formula in formulae:
         cnf |= str_to_cnf(formula)
-    with timeout(limit_seconds):
-        return find_contradiction(cnf)
+    return timeout(lambda done: find_contradiction(done, cnf), limit_seconds)
 
 
 def findIncSet(fSets):  # noqa

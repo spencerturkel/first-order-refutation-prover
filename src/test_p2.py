@@ -1,5 +1,7 @@
 """Test p2.py"""
 
+import random
+
 import pytest
 
 from . import p2
@@ -242,19 +244,21 @@ def test_resolve(clause_one, clause_two, result):
     assert p2.resolve(clause_one, clause_two) == result
 
 
-def test_timeout():
-    with p2.timeout(1, pytest.fail):
-        pass
+def test_timeout_triggered():
+    num = random.random()
 
-    def handler():
-        handler.called = True
-    handler.called = False
-
-    with p2.timeout(1, handler):
-        while True:
+    def compute(done):
+        while not done.is_set():
             pass
+        return num
 
-    assert handler.called
+    assert p2.timeout(fn=compute, seconds=1) == num
+
+
+def test_timeout_untriggered():
+    num = random.random()
+
+    assert p2.timeout(fn=lambda _: num, seconds=0.01) == num
 
 
 @pytest.mark.parametrize('clauses, seconds', [
@@ -272,7 +276,7 @@ def test_timeout():
         frozenset({
             ('Q', (('b', ()),))
         })
-    }), 0),
+    }), 1),
     (frozenset({
         frozenset({
             ('P', ('x',)),
@@ -284,11 +288,11 @@ def test_timeout():
         frozenset({
             ('NOT', ('P', (('a', ()),)))
         }),
-    }), 0),
+    }), 1),
 ])
 def test_find_contradiction(clauses, seconds):
-    with p2.timeout(seconds, lambda: pytest.fail('Timed out')):
-        assert p2.find_contradiction(clauses)
+    assert p2.timeout(
+        lambda done: p2.find_contradiction(done, clauses), seconds)
 
 
 @pytest.mark.parametrize('clauses, seconds', [
@@ -306,8 +310,8 @@ def test_find_contradiction(clauses, seconds):
     }), 1),
 ])
 def test_find_contradiction_failure(clauses, seconds):
-    with p2.timeout(seconds):
-        assert not p2.find_contradiction(clauses)
+    assert not p2.timeout(
+        lambda done: p2.find_contradiction(done, clauses), seconds)
 
 
 arithmetic = [
