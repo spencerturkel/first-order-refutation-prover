@@ -99,90 +99,7 @@ class ParseError(Exception):
     pass
 
 
-class _Parser:
-    __slots__ = (
-        'peek_token',
-        'tokens',
-    )
-
-    def __init__(self, tokens):
-        self.peek_token = None
-        self.tokens = tokens
-
-    def formula(self):
-        token = self._next()
-
-        if token != '(':
-            return token
-
-        expr = self._expr()
-        self._expect(')')
-        return expr
-
-    def _expect(self, token):
-        if self._next() != token:
-            raise ParseError
-
-    def _expr(self):
-        token = self._next()
-        if token in {'FORALL', 'EXISTS'}:
-            return token, self._next(), self.formula()
-        if token in {'AND', 'OR', 'IMPLIES'}:
-            return token, self.formula(), self.formula()
-        if token == 'NOT':
-            return token, self.formula()
-        return token, self._terms()
-
-    def _next(self):
-        if self.peek_token is not None:
-            token = self.peek_token
-            self.peek_token = None
-            return token
-
-        return next(self.tokens)
-
-    def _terms(self):
-        terms = []
-        while True:
-            token = self._peek()
-            if token == ')':
-                return tuple(terms)
-            if token == '(':
-                self._next()
-                terms.append(self._sub_term())
-            else:
-                self._next()
-                terms.append(token)
-
-    def _peek(self):
-        if self.peek_token is None:
-            try:
-                self.peek_token = next(self.tokens)
-            except StopIteration as e:
-                raise ParseError from e
-        return self.peek_token
-
-    def _sub_term(self):
-        root = self._next()
-        if root in {'(', ')'}:
-            raise ParseError
-        terms = []
-        while True:
-            token = self._next()
-            if token == ')':
-                return root, tuple(terms)
-            if token == '(':
-                terms.append(self._sub_term())
-            else:
-                terms.append(token)
-
-
-def parse(formula_tokens):
-    """Parse the formula tokens into an abstract syntax tree."""
-    return _Parser(formula_tokens).formula()
-
-
-class _SmartParser:
+class _CnfParser:
     __slots__ = (
         'fresh_num',
         'negated',
@@ -348,173 +265,14 @@ class _SmartParser:
                              else self.substitutions.get(token, (token, ())))
 
 
-def smart_parse(formula_tokens):
-    """Parse the formula tokens into an abstract syntax tree."""
-    return _SmartParser(formula_tokens).formula()
-
-
-def normalize(formula):
-    """Get the normalized form of the formula."""
-    def positive(formula):
-        tag, *args = formula
-
-        if tag in {'FORALL', 'EXISTS'}:
-            return tag, args[0], positive(args[1])
-        if tag == 'IMPLIES':
-            return 'OR', negative(args[0]), positive(args[1])
-        if tag in {'AND', 'OR'}:
-            return tag, positive(args[0]), positive(args[1])
-        if tag == 'NOT':
-            return negative(args[0])
-        return formula
-
-    def negative(formula):
-        tag, *args = formula
-
-        if tag == 'FORALL':
-            return 'EXISTS', args[0], negative(args[1])
-        if tag == 'EXISTS':
-            return 'FORALL', args[0], negative(args[1])
-        if tag == 'IMPLIES':
-            return 'AND', positive(args[0]), negative(args[1])
-        if tag == 'AND':
-            return 'OR', negative(args[0]), negative(args[1])
-        if tag == 'OR':
-            return 'AND', negative(args[0]), negative(args[1])
-        if tag == 'NOT':
-            return positive(args[0])
-        return 'NOT', formula
-
-    return positive(formula)
-
-
-def substitute(substitutions, term):
-    """Substitutes the given substitution dict into the term."""
-    if isinstance(term, str):
-        return substitutions.get(term, term)
-
-    fun, arguments = term
-    return fun, tuple(substitute(substitutions, arg) for arg in arguments)
-
-
-def standardize(formula):
-    """Generate an equivalent normalized formula with unique variables."""
-    fresh = -1  # negative since input cannot have '-' character
-    variables = set()
-
-    def recur(formula, substitutions):
-        nonlocal fresh
-        tag, *args = formula
-
-        if tag in {'FORALL', 'EXISTS'}:
-            var = args[0]
-
-            if var in variables:
-                new_var = str(fresh)
-                fresh -= 1
-                substitutions = substitutions.copy()
-                substitutions[var] = new_var
-                var = new_var
-
-            variables.add(var)
-            return tag, var, recur(args[1], substitutions)
-
-        if tag in {'AND', 'OR'}:
-            return (tag,
-                    recur(args[0], substitutions),
-                    recur(args[1], substitutions))
-
-        if tag == 'NOT':
-            return tag, recur(args[0], substitutions)
-
-        if isinstance(formula, str):
-            return formula
-
-        return tag, tuple(substitute(substitutions, term) for term in args[0])
-
-    return recur(formula, dict())
-
-
-def prenex(formula):
-    """Generate an equivalent prenex formula."""
-    tag, *args = formula
-
-    if tag in {'FORALL', 'EXISTS'}:
-        return tag, args[0], prenex(args[1])
-
-    if tag in {'AND', 'OR'}:
-        fst, snd = map(prenex, args)
-        fst_tag = fst[0]
-        snd_tag = snd[0]
-        if fst_tag in {'FORALL', 'EXISTS'}:
-            if snd_tag in {'FORALL', 'EXISTS'}:
-                return fst_tag, fst[1], (snd_tag, snd[1], (tag, fst[2], snd[2]))
-            return fst_tag, fst[1], (tag, fst[2], snd)
-        if snd_tag in {'FORALL', 'EXISTS'}:
-            return snd_tag, snd[1], (tag, fst, snd[2])
-        return formula
-
-    return formula
-
-
-def skolemize(formula):
-    """Generate an equivalent skolemized formula."""
-    def recur(formula, quantifiers, substitutions):
-        tag, *args = formula
-
-        if tag == 'FORALL':
-            var = args[0]
-
-            return recur(args[1],
-                         (quantifiers + (var,)) if var not in quantifiers
-                         else quantifiers,
-                         substitutions)
-
-        if tag == 'EXISTS':
-            var = args[0]
-
-            substitutions = substitutions.copy()
-            substitutions[var] = (var, quantifiers)
-
-            return recur(args[1], quantifiers, substitutions)
-
-        if tag in {'AND', 'OR'}:
-            return (tag,
-                    recur(args[0], quantifiers, substitutions),
-                    recur(args[1], quantifiers, substitutions))
-
-        if tag == 'NOT':
-            return tag, recur(args[0], quantifiers, substitutions)
-
-        if isinstance(formula, str):
-            return formula
-
-        return tag, tuple(substitute(substitutions, term) for term in args[0])
-
-    return recur(formula, (), dict())
-
-
-def to_cnf(formula):
-    # """Generate an equivalent CNF formula from a ZOL formula."""
-    tag, *args = formula
-
-    if tag == 'AND':
-        return to_cnf(args[0]) | to_cnf(args[1])
-
-    if tag == 'OR':
-        return frozenset(fst | snd
-                         for fst in to_cnf(args[0])
-                         for snd in to_cnf(args[1]))
-    return frozenset((frozenset((formula,)),))
+def parse(formula_tokens):
+    """Parse the token stream into CNF."""
+    return _CnfParser(formula_tokens).formula()
 
 
 def str_to_cnf(string):
-    """Parse an input string into a CNF formula."""
-    return _SmartParser(lex(string)).formula()
-    # return to_cnf(skolemize(prenex(standardize(normalize(
-    #     parse(lex(string)))))))
-
-# brute force resoluton, calls unification until empty clause is given or time limit is reached
+    """Parse the input string into CNF."""
+    return parse(lex(string))
 
 
 def find_disagreement(first_term, second_term):
@@ -550,6 +308,15 @@ def variable_in_term(variable, term):
         else:
             term_stack.extend(term[1])
     return False
+
+
+def substitute(substitutions, term):
+    """Substitutes the given substitution dict into the term."""
+    if isinstance(term, str):
+        return substitutions.get(term, term)
+
+    fun, arguments = term
+    return fun, tuple(substitute(substitutions, arg) for arg in arguments)
 
 
 def unify(term_one, term_two):
