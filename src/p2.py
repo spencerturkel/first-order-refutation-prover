@@ -466,7 +466,7 @@ def timeout(seconds, on_timeout=lambda: None):
     def on_signal():
         raise TimeoutError
     signal.signal(signal.SIGALRM, lambda _1, _2: on_signal())
-    # signal.alarm(seconds)
+    signal.alarm(seconds)
     try:
         yield
     except TimeoutError:
