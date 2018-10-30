@@ -496,21 +496,37 @@ def findIncSet(fSets):  # noqa
     :param fSets: list of formula lists
     :return: returns the list of inconsistent zero-indexed indices
     """
-    result_indices = []
+    result = []
+
     num_sets = len(fSets)
 
     if num_sets == 0:
-        return result_indices
+        return list(result_indices)
 
     time_limit = 600 / num_sets
 
-    for index, formulae in enumerate(fSets):
+    problems = []
+    for formulae in fSets:
         try:
-            def target(formulae):
-                return lambda done: is_inconsistent(done, formulae)
-            if timeout(target(formulae), time_limit):
-                result_indices.append(index)
+            def target(formulae, event):
+                if timeout(lambda done: is_inconsistent(done, formulae),
+                           time_limit):
+                    event.set()
+            event = multiprocessing.Event()
+            process = multiprocessing.Process(group=None,
+                                              target=target,
+                                              args=(formulae, event))
+            process.start()
+            problems.append((process, event))
         except:  # noqa
             continue
 
-    return result_indices
+    for index, (process, event) in enumerate(problems):
+        try:
+            process.join()
+            if event.is_set():
+                result.append(index)
+        except:  # noqa
+            continue
+
+    return result
