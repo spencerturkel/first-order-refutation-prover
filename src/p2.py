@@ -1,4 +1,4 @@
-"""Main file that will be executed by the grader."""
+"""Zachary Meyer, Matthew Monnik, Jacob Schioppo, and Spencer Turkel"""
 
 #                 __  __    ______  _____   ____     __    __
 #                /\ \/\ \  /\  _  \/\  _ `\/\  _`\  /\ \  /\ \
